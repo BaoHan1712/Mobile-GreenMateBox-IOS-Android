@@ -85,6 +85,14 @@ const MOCK_BADGES = [
 
 ];
 
+// Gifts with images from assets/imgage (use existing bao.png as example)
+const GIFT_ITEMS = [
+  { id: 'g1', name: 'Nhật BILI', cost: 1, img: require('./assets/imgage/nhat.png') },
+  { id: 'g2', name: 'Kẹo trẻ em', cost: 10, img: require('./assets/imgage/keo.jpg') },
+  { id: 'g3', name: 'túi giấy', cost: 50, img: require('./assets/imgage/tuiqua.png') },
+  { id: 'g4', name: 'Tạ 2kg', cost: 200, img: require('./assets/imgage/ta.jpg') },
+];
+
 // --- COMPONENTS ---
 
 // Glass Card Component
@@ -469,16 +477,16 @@ export default function App() {
 
        <Text style={styles.sectionTitle}>Đổi quà hot</Text>
        <View style={styles.gridContainer}>
-          {['Voucher 50k', 'Bình nước tre', 'Túi Canvas', 'Thẻ xe bus'].map((item, idx) => (
-            <GlassCard key={idx} style={styles.giftCard}>
+          {GIFT_ITEMS.map((item, idx) => (
+            <GlassCard key={item.id} style={styles.giftCard}>
                <View style={styles.giftIconBg}>
-                  <Gift size={32} color="#065F46" />
+                  <Image source={item.img} style={styles.giftImage} resizeMode="contain" />
                </View>
                <View style={{padding: 12}}>
-                 <Text style={styles.giftName}>{item}</Text>
-                 <Text style={styles.giftPrice}>{(idx + 1) * 200} điểm</Text>
-                 <TouchableOpacity style={styles.redeemBtn} onPress={() => handleRedeem(item, (idx + 1) * 200)}>
-                   <Text style={styles.redeemBtnText}>Đổi ngay ({(idx + 1) * 200})</Text>
+                 <Text style={styles.giftName}>{item.name}</Text>
+                 <Text style={styles.giftPrice}>{item.cost} điểm</Text>
+                 <TouchableOpacity style={styles.redeemBtn} onPress={() => handleRedeem(item.name, item.cost)}>
+                   <Text style={styles.redeemBtnText}>Đổi ngay ({item.cost})</Text>
                  </TouchableOpacity>
                </View>
             </GlassCard>
@@ -844,6 +852,7 @@ const styles = StyleSheet.create({
   walletBtnTextPrimary: { color: 'white', fontWeight: 'bold' },
   giftCard: { width: '48%', padding: 0, overflow: 'hidden', marginBottom: 15, backgroundColor: 'rgba(255,255,255,0.8)' },
   giftIconBg: { height: 100, backgroundColor: 'rgba(52, 211, 153, 0.1)', justifyContent: 'center', alignItems: 'center' },
+  giftImage: { width: 64, height: 64 },
   giftName: { fontWeight: 'bold', color: COLORS.textDark, fontSize: 14, marginBottom: 4 },
   giftPrice: { color: COLORS.success, fontWeight: 'bold', fontSize: 12, marginBottom: 10 },
   redeemBtn: { backgroundColor: '#D1FAE5', padding: 8, borderRadius: 10, alignItems: 'center' },
