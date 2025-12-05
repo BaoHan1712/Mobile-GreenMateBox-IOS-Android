@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,10 +8,13 @@ import {
   SafeAreaView,
   Dimensions,
   Animated,
+  PanResponder,
   Image,
+  Modal,
   Alert,
   StatusBar,
-  Platform
+  Platform,
+  Easing
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
@@ -24,169 +27,320 @@ import {
   Zap, 
   Gift, 
   Leaf, 
-  Award 
+  Award,
+  ChevronRight,
+  X,
+  Lock,
+  Star,
+  Droplets,
+  GhostIcon,
+  GiftIcon,
+  AwardIcon
 } from 'lucide-react-native';
 
-// --- CẤU HÌNH MÀU SẮC & THEME ---
+// --- CẤU HÌNH MÀU SẮC ---
 const COLORS = {
-  primary: '#34D399',      // Xanh lá chủ đạo (Emerald)
-  secondary: '#059669',    // Xanh đậm hơn
-  glassWhite: 'rgba(255, 255, 255, 0.25)',
-  glassBorder: 'rgba(255, 255, 255, 0.5)',
+  primary: '#34D399',
   textDark: '#064E3B',
   textLight: '#ECFDF5',
+  glassWhite: 'rgba(255, 255, 255, 0.3)',
+  glassBorder: 'rgba(255, 255, 255, 0.6)',
+  success: '#10B981',
   warning: '#F59E0B',
   danger: '#EF4444',
-  success: '#10B981'
 };
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-// --- DATA GIẢ LẬP (MOCK DATA) ---
+// --- MOCK DATA ---
 const MOCK_USER = {
   name: "Hàn Quốc Bảo",
   level: "Eco Warrior - Level 10",
-  // Use a relative path from App.js so Metro bundler can include the asset
-  avatar: require('./assets/imgage/bao.png'),
+  avatar: require('./assets/imgage/bao.png'), 
 };
 
-
-const NEARBY_MACHINES = [
-  { id: 1, name: "Sảnh A - ĐH Bách Khoa", status: "active", capacity: 80, types: ["PET", "ALU"], x: 100, y: 150 },
-  { id: 2, name: "Canteen Khu B", status: "full", capacity: 5, types: ["PET"], x: 250, y: 300 },
-  { id: 3, name: "Ký túc xá Khu A", status: "maintenance", capacity: 0, types: ["PET", "ALU"], x: 180, y: 450 },
+// OLD: const NEARBY_MACHINES = [ ... ]
+// Replace with an initial list that includes more positions:
+const INITIAL_NEARBY_MACHINES = [
+  { id: 1, name: "CS1 ĐH Lạc Hồng", status: "active", capacity: 80, types: ["PET", "ALU"], x: 100, y: 150 },
+  { id: 2, name: "CS2 ĐH Lạc Hồng", status: "full", capacity: 5, types: ["PET"], x: 250, y: 300 },
+  { id: 3, name: "CS3 ĐH Lạc Hồng", status: "maintenance", capacity: 0, types: ["PET", "ALU"], x: 420, y: 120 },
+  { id: 4, name: "Ký túc xá Khu A", status: "active", capacity: 60, types: ["PET", "ALU"], x: 180, y: 450 },
+  // extra static markers
+  { id: 5, name: "Trạm Số 5", status: "active", capacity: 45, types: ["PET"], x: 130, y: 400 },
+  { id: 6, name: "Trạm Số 6", status: "full", capacity: 2, types: ["ALU"], x: 520, y: 430 },
 ];
 
-// --- COMPONENT: GLASS CARD ---
-// Wrapper tạo hiệu ứng kính mờ
-const GlassCard = ({ children, style }) => (
-  <View style={[styles.glassCard, style]}>
-    {children}
-  </View>
-);
+const MOCK_BADGES = [
+  { id: 1, name: "Khởi đầu xanh", desc: "Đổi chai nhựa lần đầu tiên", color: '#FACC15', icon: Leaf, unlocked: true }, // Yellow
+  { id: 2, name: "Chiến binh", desc: "Đạt mốc 1000 điểm Eco", color: '#10B981', icon: Award, unlocked: true }, // Emerald
+  { id: 3, name: "Người BỐ ĐỜI", desc: "Mời 10 bạn tham gia", color: '#231aa4ff', icon: GhostIcon, unlocked: true }, // Red
+  { id: 4, name: "Zero Waste", desc: "Không dùng rác thải nhựa 1 tuần", color: '#FB923C', icon: Recycle, unlocked: true }, // Orange
+  { id: 5, name: "Bậc thầy nhôm", desc: "Tái chế 50 lon nhôm", color: '#9CA3AF', icon: Zap, unlocked: false }, // Gray
+  { id: 6, name: "Siêu sao Eco", desc: "Đứng Top 1 BXH tuần", color: '#A855F7', icon: Star, unlocked: false }, // Purple
+  { id: 7, name: "Lời thì thầm của ĐÁ", desc: "Quy đổi 10 cây xanh", color: '#16A34A', icon: Leaf, unlocked: false }, // Green
+  { id: 8, name: "Người TRÊN MÂY", desc: "Mời 5 bạn tham gia", color: '#F87171', icon: Gift, unlocked: false }, // Red
+  { id: 9, name: "Đại sứ biển", desc: "Quyên góp 5000đ cho biển", color: '#60A5FA', icon: Droplets, unlocked: false }, // Blue
+  { id: 10, name: "ÁC WỦY PHI PHAI", desc: "Đổi 100 chai nhựa", color: '#ff5733ff', icon: AwardIcon, unlocked: false }, // Red
 
-// --- COMPONENT: SIMPLE BAR CHART ---
-const SimpleBarChart = ({ data }) => {
-  const maxVal = Math.max(...data.map(d => d.value));
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 150, justifyContent: 'space-between', paddingTop: 20 }}>
-      {data.map((item, index) => (
-        <View key={index} style={{ alignItems: 'center', width: 40 }}>
-          <View 
-            style={{ 
-              width: 12, 
-              height: (item.value / maxVal) * 100, 
-              backgroundColor: COLORS.textDark, 
-              borderRadius: 6,
-              opacity: 0.8
-            }} 
-          />
-          <Text style={{ fontSize: 10, color: COLORS.textDark, marginTop: 5 }}>{item.label}</Text>
-        </View>
-      ))}
-    </View>
-  );
+];
+
+// --- COMPONENTS ---
+
+// Glass Card Component
+const GlassCard = ({ children, style, onPress }) => {
+  // only use TouchableOpacity when onPress provided; otherwise use View
+  if (onPress) {
+    return (
+      <TouchableOpacity onPress={onPress} style={[styles.glassCard, style]} activeOpacity={0.8}>
+        {children}
+      </TouchableOpacity>
+    );
+  }
+  return <View style={[styles.glassCard, style]}>{children}</View>;
 };
 
-// --- MÀN HÌNH CHÍNH (APP) ---
+// --- MAIN APP ---
 export default function App() {
   const [activeTab, setActiveTab] = useState('Home');
   const [points, setPoints] = useState(1280);
   const [bottles, setBottles] = useState(42);
   const [cans, setCans] = useState(31);
   const [co2, setCo2] = useState(3.4);
+  // Wallet history sample
+  const [walletHistory, setWalletHistory] = useState([
+    { id: 1, type: 'Nạp điểm', item: 'Tặng điểm đăng ký', points: 500, date: '2025-11-20 09:12', status: 'Hoàn tất' },
+    { id: 2, type: 'Đổi quà', item: 'Bình nước tre', points: 400, date: '2025-11-25 15:30', status: 'Hoàn tất' },
+    { id: 3, type: 'Đổi quà', item: 'Túi Canvas', points: 600, date: '2025-11-28 12:02', status: 'Hoàn tất' },
+    { id: 4, type: 'Đổi quà', item: 'Thẻ xe bus', points: 800, date: '2025-12-01 18:20', status: 'Hoàn tất' },
+    { id: 5, type: 'Hoạt động', item: 'Quét QR', points: 120, date: '2025-12-03 08:45', status: 'Hoàn tất' },
+  ]);
+  // Control wallet history modal visibility
+  const [showWalletHistory, setShowWalletHistory] = useState(false);
   
-  // State cho quá trình scan
+  // State Modal & Scan
+  const [showAllBadges, setShowAllBadges] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
-  
-  // Animation values
-  const pointsAnim = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // --- LOGIC: GIẢ LẬP PHẦN CỨNG ---
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const scanLineAnim = useRef(new Animated.Value(0)).current;
+  const spinValue = useRef(new Animated.Value(0)).current;
+
+  // Map gestures: pan & pinch/zoom
+  const mapPan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const mapScale = useRef(new Animated.Value(1)).current;
+  const lastPan = useRef({ x: 0, y: 0 });
+  const lastScale = useRef(1);
+  const initialPinchDistance = useRef(null);
+
+  // helper: distance between two fingers for pinch gesture
+  const getDistance = (t1, t2) => {
+    const dx = t1.pageX - t2.pageX;
+    const dy = t1.pageY - t2.pageY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt, gestureState) => {
+        mapPan.setOffset({ x: lastPan.current.x, y: lastPan.current.y });
+        mapPan.setValue({ x: 0, y: 0 });
+        const touches = evt.nativeEvent.touches;
+        if (touches && touches.length === 2) {
+          initialPinchDistance.current = getDistance(touches[0], touches[1]);
+        }
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        const touches = evt.nativeEvent.touches;
+        if (touches && touches.length === 2) {
+          const dist = getDistance(touches[0], touches[1]);
+          if (initialPinchDistance.current) {
+            let scaleFactor = (dist / initialPinchDistance.current) * lastScale.current;
+            if (scaleFactor < 0.6) scaleFactor = 0.6;
+            if (scaleFactor > 3) scaleFactor = 3;
+            mapScale.setValue(scaleFactor);
+          }
+        } else {
+          mapPan.setValue({ x: gestureState.dx, y: gestureState.dy });
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        lastPan.current.x += gestureState.dx;
+        lastPan.current.y += gestureState.dy;
+        mapPan.flattenOffset();
+        // store last scale
+        try {
+          // __getValue is supported by Animated.Value
+          lastScale.current = mapScale.__getValue ? mapScale.__getValue() : lastScale.current;
+        } catch (e) {}
+        initialPinchDistance.current = null;
+      }
+    })
+  ).current;
+
+  useEffect(() => {
+    // Intro Animation
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 800, easing: Easing.out(Easing.exp), useNativeDriver: true })
+    ]).start();
+
+    // Scan Line Animation Loop
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(scanLineAnim, { toValue: 1, duration: 2000, easing: Easing.linear, useNativeDriver: true }),
+        Animated.timing(scanLineAnim, { toValue: 0, duration: 0, useNativeDriver: true })
+      ])
+    ).start();
+
+    // Spin Animation for loading
+    Animated.loop(
+      Animated.timing(spinValue, { toValue: 1, duration: 2000, easing: Easing.linear, useNativeDriver: true })
+    ).start();
+  }, []);
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg']
+  });
+
+  const scanTranslateY = scanLineAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 200] // Height of scan area
+  });
+
+  // --- LOGIC ---
   const handleScan = () => {
     setIsScanning(true);
     setScanResult(null);
-
-    // Giả lập độ trễ kết nối và xử lý AI
+    
+    // Simulate Processing
     setTimeout(() => {
       const newBottles = Math.floor(Math.random() * 5) + 1;
       const newCans = Math.floor(Math.random() * 3) + 1;
       const earnedPoints = (newBottles * 5) + (newCans * 3);
       const savedCo2 = (newBottles * 0.08) + (newCans * 0.15);
 
-      setScanResult({
-        bottles: newBottles,
-        cans: newCans,
-        points: earnedPoints,
-        co2: savedCo2
-      });
-
-      runRewardAnimation();
-
+      setScanResult({ bottles: newBottles, cans: newCans, points: earnedPoints, co2: savedCo2 });
+      
+      // Update data
       setTimeout(() => {
-        setPoints(prev => prev + earnedPoints);
-        setBottles(prev => prev + newBottles);
-        setCans(prev => prev + newCans);
-        setCo2(prev => parseFloat((prev + savedCo2).toFixed(2)));
+        setPoints(p => p + earnedPoints);
+        setBottles(b => b + newBottles);
+        setCans(c => c + newCans);
+        setCo2(c => parseFloat((c + savedCo2).toFixed(2)));
         setIsScanning(false);
-      }, 1500);
-
+      }, 2000);
     }, 2000);
   };
 
-  const runRewardAnimation = () => {
-    pointsAnim.setValue(0);
-    fadeAnim.setValue(1);
-    Animated.parallel([
-      Animated.timing(pointsAnim, {
-        toValue: -100,
-        duration: 1000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 1000,
-        delay: 500,
-        useNativeDriver: true,
-      })
-    ]).start();
+  // Replace static NEARBY_MACHINES usage with state so markers can be added at runtime
+  const [nearbyMachines, setNearbyMachines] = useState(INITIAL_NEARBY_MACHINES);
+
+  // helper to add a marker at a random position (keeps demo simple)
+  const addRandomMachine = () => {
+    const id = Date.now();
+    const x = Math.floor(Math.random() * 760) + 40; // within mapContent width
+    const y = Math.floor(Math.random() * 640) + 20; // within mapContent height
+    const newMachine = {
+      id,
+      name: `Vị trí ${id % 1000}`,
+      status: ['active','full','maintenance'][Math.floor(Math.random() * 3)],
+      capacity: Math.floor(Math.random() * 100),
+      types: ['PET'],
+      x,
+      y
+    };
+    setNearbyMachines(prev => [...prev, newMachine]);
   };
 
-  // --- RENDER CÁC MODULE ---
+  // Wallet: redeem handler
+  const handleRedeem = (name, cost) => {
+    // Not enough points
+    if (points < cost) {
+      const failedEntry = { id: Date.now(), type: 'Đổi quà', item: name, points: cost, date: new Date().toLocaleString(), status: 'Thất bại' };
+      setWalletHistory(prev => [failedEntry, ...prev].slice(0, 20));
+      Alert.alert('Không đủ Eco', `Bạn cần ${cost} Eco nhưng hiện có ${points} Eco.`);
+      return;
+    }
+
+    // Deduct and add success history
+    setPoints(p => p - cost);
+    const newEntry = { id: Date.now(), type: 'Đổi quà', item: name, points: cost, date: new Date().toLocaleString(), status: 'Hoàn tất' };
+    setWalletHistory(prev => [newEntry, ...prev].slice(0, 20));
+
+    // Notify user
+    Alert.alert('Đổi quà thành công', `Bạn đã đổi ${name} và trừ ${cost} Eco.`);
+  };
+
+  // --- RENDERS ---
+
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <View>
+        <Text style={styles.appName}>GREENMATE BOX</Text>
+        <Text style={styles.welcomeText}>Xin chào, {MOCK_USER.name}!</Text>
+      </View>
+      <View style={styles.avatarContainer}>
+        <Image source={MOCK_USER.avatar} style={styles.avatar} />
+
+        <View style={styles.onlineDot} />
+      </View>
+    </View>
+  );
 
   const renderDashboard = () => (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.appName}>GreenMate Box</Text>
-          <Text style={styles.welcomeText}>Xin chào, {MOCK_USER.name}!</Text>
-        </View>
-        <Image source={MOCK_USER.avatar} style={styles.avatar} /> 
-      </View>
+      {renderHeader()}
 
-      {/* Main Stats Card */}
-      <GlassCard style={styles.bigCard}>
-        <TouchableOpacity style={styles.refreshBtn}>
-          <Recycle size={20} color={COLORS.textDark} />
-        </TouchableOpacity>
-        <Text style={styles.cardLabel}>Điểm hiện tại</Text>
-        <Text style={styles.bigPoint}>{points}</Text>
-        <View style={styles.waveLine} />
-      </GlassCard>
+      {/* Main Card */}
+      <View style={styles.mainCardShadow}>
+        <LinearGradient
+          colors={['#059669', '#047857']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.mainCard}
+        >
+          {/* Decorative Circles */}
+          <View style={[styles.decorCircle, { top: -20, right: -20, width: 100, height: 100 }]} />
+          <View style={[styles.decorCircle, { bottom: -20, left: -20, width: 80, height: 80 }]} />
+
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardLabel}>TỔNG ĐIỂM TÍCH LŨY</Text>
+            <View style={styles.iconBg}>
+              <Recycle size={18} color="white" />
+            </View>
+          </View>
+          
+          <View style={styles.pointsContainer}>
+            <Text style={styles.pointsValue}>{points}</Text>
+            <Text style={styles.pointsUnit}>PTS</Text>
+          </View>
+
+          <View style={styles.levelContainer}>
+            <View style={styles.levelBarBg}>
+              <View style={[styles.levelBarFill, { width: '80%' }]} />
+            </View>
+            <Text style={styles.levelText}>{MOCK_USER.level}</Text>
+          </View>
+        </LinearGradient>
+      </View>
 
       {/* Grid Stats */}
       <View style={styles.gridContainer}>
         {[
-          { label: 'Chai nhựa', val: bottles, icon: Leaf },
-          { label: 'Lon nhôm', val: cans, icon: Zap },
-          { label: 'CO₂ Giảm', val: `${co2} kg`, icon: Award },
-        ].map((item, index) => (
-          <GlassCard key={index} style={styles.smallCard}>
-            <View style={styles.iconCircle}>
-              <item.icon size={24} color={COLORS.textDark} />
+          { label: 'Chai nhựa', val: bottles, icon: Leaf, color: '#16A34A', bg: '#DCFCE7' },
+          { label: 'Lon nhôm', val: cans, icon: Zap, color: '#2563EB', bg: '#DBEAFE' },
+          { label: 'CO₂ Giảm', val: `${co2}kg`, icon: Award, color: '#EA580C', bg: '#FFEDD5' },
+        ].map((item, idx) => (
+          <GlassCard key={idx} style={styles.statCard}>
+            <View style={[styles.statIconBg, { backgroundColor: item.bg }]}>
+              <item.icon size={22} color={item.color} />
             </View>
             <Text style={styles.statLabel}>{item.label}</Text>
             <Text style={styles.statValue}>{item.val}</Text>
@@ -194,100 +348,139 @@ export default function App() {
         ))}
       </View>
 
-      {/* Badges */}
-      <GlassCard style={styles.wideCard}>
-        <View style={styles.rowBetween}>
-          <Text style={styles.sectionTitle}>Thành tích</Text>
-          <Text style={styles.linkText}>Xem tất cả</Text>
+      {/* Achievements Section */}
+      <GlassCard style={styles.achievementCard}>
+        <View style={styles.sectionHeader}>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <Award size={20} color="#D97706" style={{marginRight: 8}} />
+            <Text style={styles.sectionTitle}>Thành tích</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.seeAllBtn}
+            onPress={() => setShowAllBadges(true)}
+          >
+            <Text style={styles.seeAllText}>Xem tất cả</Text>
+            <ChevronRight size={14} color="#047857" />
+          </TouchableOpacity>
         </View>
-        <View style={styles.badgeRow}>
-          {['Eco Starter', 'Green Warrior', 'Zero Waste'].map((badge, idx) => (
-            <View key={idx} style={styles.badgeItem}>
-              <View style={[styles.badgeIcon, { backgroundColor: idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : '#CD7F32' }]}>
-                <Award color="white" size={20} />
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingVertical: 10}}>
+          {MOCK_BADGES.slice(0, 3).map((badge, idx) => (
+            <View key={idx} style={styles.badgeItemHorizontal}>
+              <View style={[styles.badgeIconBg, { backgroundColor: badge.color }]}>
+                <badge.icon size={24} color="white" />
               </View>
-              <Text style={styles.badgeText}>{badge}</Text>
+              <Text numberOfLines={2} style={styles.badgeName}>{badge.name}</Text>
             </View>
           ))}
-        </View>
-        <View style={{ marginTop: 15, alignItems: 'center' }}>
-          <Text style={{ fontWeight: 'bold', color: COLORS.textDark }}>{MOCK_USER.level}</Text>
-          <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: '60%' }]} />
-          </View>
-        </View>
+          <TouchableOpacity onPress={() => setShowAllBadges(true)} style={styles.moreBadgeBtn}>
+             <View style={styles.moreBadgeCircle}>
+                <Text style={styles.moreBadgeText}>+{MOCK_BADGES.length - 3}</Text>
+             </View>
+             <Text style={styles.moreBadgeLabel}>Xem thêm</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </GlassCard>
     </ScrollView>
   );
 
   const renderScan = () => (
-    <View style={styles.centerContainer}>
-      <GlassCard style={styles.scanCard}>
-        <Text style={styles.scanTitle}>Kết nối máy phân loại</Text>
-        <View style={styles.qrPlaceholder}>
+    <View style={styles.centerContent}>
+      <GlassCard style={styles.scanContainer}>
+        <Text style={styles.sectionTitleLarge}>Quét Mã QR</Text>
+        <Text style={styles.scanSubtitle}>Kết nối với máy GreenMate Box gần nhất</Text>
+        
+        <View style={styles.qrFrame}>
           {isScanning ? (
-            <View style={{alignItems: 'center'}}>
-               {/* Note: In real app use ActivityIndicator */}
-               <Recycle size={60} color={COLORS.textDark} />
-               <Text style={{marginTop: 20, color: COLORS.textDark}}>Đang nhận dữ liệu...</Text>
+            <View style={{ alignItems: 'center' }}>
+              <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                <Recycle size={60} color={COLORS.primary} />
+              </Animated.View>
+              <Text style={styles.scanningText}>Đang xử lý rác...</Text>
             </View>
           ) : scanResult ? (
-            <View style={{alignItems: 'center'}}>
-              <Text style={{fontSize: 40, fontWeight: 'bold', color: COLORS.primary}}>+{scanResult.points}</Text>
-              <Text style={{color: COLORS.textDark}}>Điểm thưởng</Text>
-              <View style={{flexDirection: 'row', marginTop: 10}}>
-                 <Text style={{marginRight: 10, fontSize: 18}}>🍾 {scanResult.bottles}</Text>
-                 <Text style={{fontSize: 18}}>🥫 {scanResult.cans}</Text>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={styles.rewardPoints}>+{scanResult.points}</Text>
+              <Text style={styles.rewardLabel}>ĐIỂM THƯỞNG</Text>
+              <View style={styles.rewardDetails}>
+                 <Text style={styles.rewardDetailText}>🍾 {scanResult.bottles}</Text>
+                 <View style={styles.dividerV} />
+                 <Text style={styles.rewardDetailText}>🥫 {scanResult.cans}</Text>
               </View>
             </View>
           ) : (
-            <Scan size={80} color={COLORS.textDark} />
+            <>
+              <Scan size={100} color="rgba(6, 78, 59, 0.2)" />
+              <Animated.View 
+                style={[
+                  styles.scanLine, 
+                  { transform: [{ translateY: scanTranslateY }] }
+                ]} 
+              />
+            </>
           )}
         </View>
-        
+
         {!isScanning && (
-          <TouchableOpacity style={styles.actionButton} onPress={handleScan}>
-            <Text style={styles.actionButtonText}>
-              {scanResult ? "Quét tiếp" : "Bắt đầu đổi rác"}
-            </Text>
+          <TouchableOpacity 
+            style={styles.mainBtn} 
+            onPress={handleScan}
+          >
+            {scanResult ? (
+              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <Recycle size={20} color="white" style={{marginRight: 8}}/>
+                <Text style={styles.mainBtnText}>Quét tiếp</Text>
+              </View>
+            ) : (
+               <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <Scan size={20} color="white" style={{marginRight: 8}}/>
+                <Text style={styles.mainBtnText}>Bắt đầu ngay</Text>
+              </View>
+            )}
           </TouchableOpacity>
         )}
-        
-        <Text style={styles.hintText}>Đưa mã QR vào camera hoặc bật Bluetooth để kết nối máy gần nhất.</Text>
       </GlassCard>
-
-      {/* Floating Animation */}
-      {scanResult && (
-        <Animated.View style={[styles.floatingReward, { transform: [{ translateY: pointsAnim }], opacity: fadeAnim }]}>
-           <Text style={styles.floatingText}>+{scanResult.points} Điểm</Text>
-           <Text style={styles.floatingSub}>Giỏi lắm!</Text>
-        </Animated.View>
-      )}
     </View>
   );
 
   const renderWallet = () => (
     <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-       <Text style={styles.screenHeader}>Ví Eco</Text>
-       <GlassCard style={styles.balanceCard}>
-         <Text style={styles.balanceLabel}>Số dư khả dụng</Text>
-         <Text style={styles.balanceValue}>{points} Eco</Text>
-         <View style={styles.rowBetween}>
-            <TouchableOpacity style={styles.smallBtn}><Text style={styles.btnText}>Lịch sử</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.smallBtn}><Text style={styles.btnText}>Nạp điểm</Text></TouchableOpacity>
-         </View>
-       </GlassCard>
+       <Text style={styles.screenTitle}>Ví Eco</Text>
+       <View style={styles.walletCardShadow}>
+         <LinearGradient
+            colors={['#065F46', '#115E59']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.walletCard}
+         >
+           <Text style={styles.walletLabel}>SỐ DƯ KHẢ DỤNG</Text>
+           <View style={{ flexDirection: 'row', alignItems: 'baseline', marginVertical: 10 }}>
+              <Text style={styles.walletValue}>{points}</Text>
+              <Text style={styles.walletUnit}>Eco</Text>
+           </View>
+           <View style={styles.walletActions}>
+                  <TouchableOpacity style={styles.walletBtnSecondary} onPress={() => setShowWalletHistory(true)}><Text style={styles.walletBtnTextSecondary}>Lịch sử</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.walletBtnPrimary}><Text style={styles.walletBtnTextPrimary}>Nạp điểm</Text></TouchableOpacity>
+           </View>
+         </LinearGradient>
+       </View>
 
-       <Text style={styles.sectionTitle}>Đổi quà</Text>
-       <View style={styles.rewardGrid}>
+      {/* History is now available via the 'Lịch sử' button to avoid showing it inline */}
+
+       <Text style={styles.sectionTitle}>Đổi quà hot</Text>
+       <View style={styles.gridContainer}>
           {['Voucher 50k', 'Bình nước tre', 'Túi Canvas', 'Thẻ xe bus'].map((item, idx) => (
-            <GlassCard key={idx} style={styles.rewardItem}>
-              <Gift size={30} color={COLORS.textDark} />
-              <Text style={styles.rewardName}>{item}</Text>
-              <Text style={styles.rewardCost}>{(idx + 1) * 200} điểm</Text>
-              <TouchableOpacity style={styles.redeemBtn}>
-                <Text style={styles.redeemText}>Đổi</Text>
-              </TouchableOpacity>
+            <GlassCard key={idx} style={styles.giftCard}>
+               <View style={styles.giftIconBg}>
+                  <Gift size={32} color="#065F46" />
+               </View>
+               <View style={{padding: 12}}>
+                 <Text style={styles.giftName}>{item}</Text>
+                 <Text style={styles.giftPrice}>{(idx + 1) * 200} điểm</Text>
+                 <TouchableOpacity style={styles.redeemBtn} onPress={() => handleRedeem(item, (idx + 1) * 200)}>
+                   <Text style={styles.redeemBtnText}>Đổi ngay ({(idx + 1) * 200})</Text>
+                 </TouchableOpacity>
+               </View>
             </GlassCard>
           ))}
        </View>
@@ -295,84 +488,206 @@ export default function App() {
   );
 
   const renderStats = () => (
-    <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-      <Text style={styles.screenHeader}>Thống kê cá nhân</Text>
-      
-      <GlassCard style={styles.wideCard}>
-        <Text style={styles.cardLabel}>Hoạt động tuần qua (Chai/Lon)</Text>
-        <SimpleBarChart data={[
-          { label: 'T2', value: 5 }, { label: 'T3', value: 12 }, { label: 'T4', value: 8 },
-          { label: 'T5', value: 20 }, { label: 'T6', value: 15 }, { label: 'T7', value: 30 }, { label: 'CN', value: 10 }
-        ]} />
-      </GlassCard>
-
-      <GlassCard style={styles.wideCard}>
-        <View style={styles.rowBetween}>
-          <Text style={styles.cardLabel}>Bảng xếp hạng (Trường ĐH)</Text>
-          <Text style={styles.highlightText}>Hạng #124</Text>
-        </View>
-        {[1, 2, 3].map((rank) => (
-           <View key={rank} style={styles.rankRow}>
-             <Text style={styles.rankNum}>#{rank}</Text>
-             <View style={styles.rankUser}>
-                <View style={styles.rankAvatar} />
-                <Text style={styles.rankName}>User {rank}0{rank}</Text>
-             </View>
-             <Text style={styles.rankScore}>{2000 - rank * 100} đ</Text>
-           </View>
-        ))}
-      </GlassCard>
-    </ScrollView>
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text style={{color: COLORS.textDark}}>Tính năng Thống kê đang phát triển...</Text>
+    </View>
   );
 
-  const renderMap = () => (
-    <View style={{ flex: 1 }}>
-       <Text style={styles.screenHeader}>Máy gần bạn</Text>
-       <View style={styles.mapContainer}>
-          {/* Mock Map View */}
-          <View style={styles.mapGrid}>
-             <View style={styles.streetH} />
-             <View style={[styles.streetH, { top: 300 }]} />
-             <View style={styles.streetV} />
-             <View style={[styles.streetV, { left: 250 }]} />
-          </View>
-          
-          {NEARBY_MACHINES.map((machine) => (
-            <TouchableOpacity 
-              key={machine.id}
-              style={[styles.mapMarker, { left: machine.x, top: machine.y }]}
-              onPress={() => Alert.alert(
-                machine.name,
-                `Trạng thái: ${machine.status}\nSức chứa: ${machine.capacity}%\nLoại: ${machine.types.join(", ")}`
-              )}
+  const renderMap = () => {
+    const animatedStyle = {
+      transform: [
+        { translateX: mapPan.x },
+        { translateY: mapPan.y },
+        { scale: mapScale }
+      ]
+    };
+
+    return (
+      <View style={{ flex: 1 }}>
+        <Text style={styles.screenTitle}>Máy gần bạn</Text>
+
+        <View style={styles.mapMockContainer}>
+          {/* Controls (zoom badge / reset / add) */}
+          <View style={styles.mapControlsRow} pointerEvents="box-none">
+            <View style={styles.zoomBadge}>
+              <Text style={styles.zoomBadgeText}>{Math.round((lastScale.current || 1) * 100)}%</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.mapAddBtn}
+              onPress={addRandomMachine}
             >
-              <MapPin 
-                size={30} 
-                fill={machine.status === 'active' ? COLORS.success : machine.status === 'full' ? COLORS.warning : COLORS.danger} 
-                color="white" 
-              />
+              <Text style={styles.mapAddText}>Thêm</Text>
             </TouchableOpacity>
-          ))}
-          <View style={[styles.userDot, { left: width/2, top: height/3 }]} />
-       </View>
-       
-       <GlassCard style={styles.mapLegend}>
-          <Text style={{fontWeight:'bold', marginBottom: 5}}>Chú thích:</Text>
-          <View style={styles.row}><View style={[styles.dot, {backgroundColor: COLORS.success}]} /><Text> Hoạt động</Text></View>
-          <View style={styles.row}><View style={[styles.dot, {backgroundColor: COLORS.warning}]} /><Text> Sắp đầy</Text></View>
-          <View style={styles.row}><View style={[styles.dot, {backgroundColor: COLORS.danger}]} /><Text> Bảo trì</Text></View>
-       </GlassCard>
-    </View>
+
+            <TouchableOpacity
+              style={styles.zoomResetBtn}
+              onPress={() => {
+                // reset transforms
+                Animated.spring(mapScale, { toValue: 1, useNativeDriver: false }).start(() => {
+                  lastScale.current = 1;
+                });
+                Animated.spring(mapPan, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start(() => {
+                  lastPan.current = { x: 0, y: 0 };
+                  mapPan.setValue({ x: 0, y: 0 });
+                });
+              }}
+            >
+              <Text style={styles.zoomResetText}>Reset</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Animated map content: supports pan & pinch */}
+          <Animated.View
+            style={[styles.mapContent, animatedStyle]}
+            {...panResponder.panHandlers}
+          >
+            {/* Improved map background and decor */}
+            <LinearGradient colors={["#E6FFFB", "#ECFDF5"]} style={styles.mapBgImproved}>
+              <View style={[styles.road, { top: '25%' }]} />
+              <View style={[styles.road, { top: '60%' }]} />
+              <View style={[styles.roadVertical, { left: '40%' }]} />
+
+              {/* soft land patches */}
+              <View style={[styles.landPatch, { left: 40, top: 40, backgroundColor: 'rgba(22,163,74,0.06)' }]} />
+              <View style={[styles.landPatch, { right: 30, top: 200, backgroundColor: 'rgba(96,165,250,0.06)' }]} />
+            </LinearGradient>
+
+            {/* Map markers - now uses state nearbyMachines */}
+            {nearbyMachines.map((machine) => (
+              <TouchableOpacity
+                key={machine.id}
+                style={[styles.mapMarker, { left: machine.x, top: machine.y }]}
+                activeOpacity={0.9}
+                onPress={() =>
+                  Alert.alert(
+                    machine.name,
+                    `Trạng thái: ${machine.status}\nSức chứa: ${machine.capacity}%\nLoại: ${machine.types.join(', ')}`
+                  )
+                }
+              >
+                <View style={styles.markerIconWrap}>
+                  <MapPin
+                    size={28}
+                    fill={machine.status === 'active' ? COLORS.success : machine.status === 'full' ? COLORS.warning : COLORS.danger}
+                    color="white"
+                  />
+                </View>
+                <View style={styles.markerLabelFloating}>
+                  <Text style={styles.markerLabelText} numberOfLines={3} ellipsizeMode="tail">
+                    {machine.name}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+
+            {/* User location centralized */}
+            <View style={[styles.userLocation, styles.userLocationImproved]}>
+              <View style={styles.userPulse} />
+              <View style={styles.userDot} />
+            </View>
+          </Animated.View>
+
+          {/* Hint */}
+          <View style={styles.mapHint} pointerEvents="none">
+            <Text style={styles.mapHintText}>Pinch to zoom • Drag to pan</Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  // --- MODAL ---
+  const renderBadgesModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={showAllBadges}
+      onRequestClose={() => setShowAllBadges(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <View>
+              <Text style={styles.modalTitle}>Kho Huy Hiệu</Text>
+              <Text style={styles.modalSubtitle}>Sưu tập {MOCK_BADGES.filter(b => b.unlocked).length}/{MOCK_BADGES.length} huy hiệu</Text>
+            </View>
+            <TouchableOpacity onPress={() => setShowAllBadges(false)} style={styles.closeBtn}>
+              <X size={24} color="#374151" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView contentContainerStyle={styles.badgesGrid}>
+            {MOCK_BADGES.map((badge, idx) => (
+              <View key={idx} style={[styles.badgeCard, !badge.unlocked && styles.badgeLocked]}>
+                 <View style={[styles.badgeIconBig, { backgroundColor: badge.unlocked ? badge.color : '#E5E7EB' }]}>
+                    <badge.icon size={32} color="white" />
+                 </View>
+                 {!badge.unlocked && (
+                   <View style={styles.lockOverlay}>
+                      <Lock size={16} color="white" />
+                   </View>
+                 )}
+                 <Text style={styles.badgeCardName}>{badge.name}</Text>
+                 <Text style={styles.badgeCardDesc}>{badge.desc}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderWalletHistoryModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={showWalletHistory}
+      onRequestClose={() => setShowWalletHistory(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <View>
+              <Text style={styles.modalTitle}>Lịch sử giao dịch</Text>
+              <Text style={styles.modalSubtitle}>Các giao dịch gần nhất</Text>
+            </View>
+            <TouchableOpacity onPress={() => setShowWalletHistory(false)} style={styles.closeBtn}>
+              <X size={24} color="#374151" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom: 40}}>
+            {walletHistory.length === 0 && (
+              <Text style={{ textAlign: 'center', color: '#6B7280' }}>Không có giao dịch nào</Text>
+            )}
+
+            {walletHistory.map((h) => (
+              <View key={h.id} style={[styles.badgeCard, { width: '100%', alignItems: 'flex-start', flexDirection: 'row', padding: 16, marginBottom: 12 }]}>
+                <View style={{flex: 1}}>
+                  <Text style={{fontWeight: '800', color: COLORS.textDark}}>{h.type} · {h.item}</Text>
+                  <Text style={{fontSize: 12, color: '#6B7280', marginTop: 6}}>{h.date}</Text>
+                </View>
+                <View style={{alignItems: 'flex-end'}}>
+                  <Text style={{fontWeight: '900', color: COLORS.textDark}}>-{h.points} Eco</Text>
+                  <Text style={{fontSize: 12, marginTop: 6, fontWeight: '700', color: h.status === 'Hoàn tất' ? COLORS.success : COLORS.danger}}>{h.status}</Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" backgroundColor="#ECFDF5" />
+      
+      {/* Background Gradient */}
       <LinearGradient
-        colors={['#86EFAC', '#ffffff', '#E0F2FE']}
+        colors={['#ECFDF5', '#F0FDF4', '#FFFFFF']}
         style={styles.background}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
       />
 
       <SafeAreaView style={styles.safeArea}>
@@ -386,35 +701,39 @@ export default function App() {
       </SafeAreaView>
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNavContainer}>
-        <GlassCard style={styles.bottomNav}>
+      <View style={styles.navContainer}>
+        <GlassCard style={styles.navBar}>
           <TouchableOpacity onPress={() => setActiveTab('Home')} style={styles.navItem}>
-             <Home color={activeTab === 'Home' ? COLORS.textDark : '#888'} size={24} />
-             {activeTab === 'Home' && <View style={styles.navDot} />}
+             <Home color={activeTab === 'Home' ? COLORS.primary : '#9CA3AF'} size={24} />
+             {activeTab === 'Home' && <View style={styles.activeDot} />}
           </TouchableOpacity>
           
           <TouchableOpacity onPress={() => setActiveTab('Map')} style={styles.navItem}>
-             <MapPin color={activeTab === 'Map' ? COLORS.textDark : '#888'} size={24} />
-             {activeTab === 'Map' && <View style={styles.navDot} />}
+             <MapPin color={activeTab === 'Map' ? COLORS.primary : '#9CA3AF'} size={24} />
+             {activeTab === 'Map' && <View style={styles.activeDot} />}
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setActiveTab('Scan')} style={styles.scanBtnWrapper}>
-             <View style={styles.scanBtn}>
-                <Scan color="white" size={28} />
-             </View>
-          </TouchableOpacity>
+          <View style={styles.scanBtnContainer}>
+            <TouchableOpacity onPress={() => setActiveTab('Scan')} style={styles.scanBtn}>
+               <Scan color="white" size={28} />
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity onPress={() => setActiveTab('Stats')} style={styles.navItem}>
-             <BarChart3 color={activeTab === 'Stats' ? COLORS.textDark : '#888'} size={24} />
-             {activeTab === 'Stats' && <View style={styles.navDot} />}
+             <BarChart3 color={activeTab === 'Stats' ? COLORS.primary : '#9CA3AF'} size={24} />
+             {activeTab === 'Stats' && <View style={styles.activeDot} />}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => setActiveTab('Wallet')} style={styles.navItem}>
-             <Wallet color={activeTab === 'Wallet' ? COLORS.textDark : '#888'} size={24} />
-             {activeTab === 'Wallet' && <View style={styles.navDot} />}
+             <Wallet color={activeTab === 'Wallet' ? COLORS.primary : '#9CA3AF'} size={24} />
+             {activeTab === 'Wallet' && <View style={styles.activeDot} />}
           </TouchableOpacity>
         </GlassCard>
       </View>
+
+      {/* Modal Overlay */}
+      {renderBadgesModal()}
+      {renderWalletHistoryModal()}
     </View>
   );
 }
@@ -423,102 +742,170 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   background: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
   safeArea: { flex: 1, paddingTop: Platform.OS === 'android' ? 35 : 0 },
-  contentContainer: { flex: 1, paddingHorizontal: 20 },
+  contentContainer: { flex: 1, paddingHorizontal: 20, paddingTop: 10 },
   
   // Header
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 20 },
-  appName: { fontSize: 14, color: COLORS.textDark, opacity: 0.7, letterSpacing: 1 },
-  welcomeText: { fontSize: 22, fontWeight: 'bold', color: COLORS.textDark },
-  avatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: 'white' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  appName: { fontSize: 10, fontWeight: 'bold', color: 'rgba(6, 78, 59, 0.6)', letterSpacing: 2, textTransform: 'uppercase' },
+  welcomeText: { fontSize: 24, fontWeight: '900', color: COLORS.textDark },
+  avatarContainer: { position: 'relative' },
+  avatar: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: 'white' },
+  onlineDot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, backgroundColor: COLORS.success, borderWidth: 2, borderColor: 'white' },
 
   // Glass Card
   glassCard: {
     backgroundColor: COLORS.glassWhite,
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: COLORS.glassBorder,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
-    marginBottom: 15
+    elevation: 2, // Android shadow
   },
-  bigCard: { alignItems: 'center', paddingVertical: 30, position: 'relative' },
-  smallCard: { flex: 1, alignItems: 'center', padding: 15, marginHorizontal: 5 },
-  wideCard: { width: '100%' },
-  
-  // Text Styles
-  cardLabel: { fontSize: 14, color: COLORS.textDark, opacity: 0.8, marginBottom: 5 },
-  bigPoint: { fontSize: 48, fontWeight: 'bold', color: COLORS.textDark },
-  refreshBtn: { position: 'absolute', right: 15, top: 15, padding: 5 },
-  waveLine: { height: 4, width: 40, backgroundColor: 'white', borderRadius: 2, marginTop: 10, opacity: 0.5 },
-  
-  gridContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
-  iconCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.4)', justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  statLabel: { fontSize: 12, color: COLORS.textDark, textAlign: 'center' },
-  statValue: { fontSize: 18, fontWeight: 'bold', color: COLORS.textDark, marginTop: 5 },
 
-  // Badges & Ranks
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: COLORS.textDark, marginBottom: 10 },
-  linkText: { fontSize: 12, color: COLORS.textDark, textDecorationLine: 'underline' },
-  badgeRow: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 10 },
-  badgeItem: { alignItems: 'center' },
-  badgeIcon: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 5 },
-  badgeText: { fontSize: 10, color: COLORS.textDark },
-  progressBarBg: { height: 6, width: 150, backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 3, marginTop: 5 },
-  progressBarFill: { height: '100%', backgroundColor: COLORS.success, borderRadius: 3 },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
+  // Main Card
+  mainCardShadow: {
+    shadowColor: COLORS.textDark,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+    marginBottom: 20,
+    borderRadius: 32,
+  },
+  mainCard: {
+    borderRadius: 32,
+    padding: 24,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  decorCircle: { position: 'absolute', borderRadius: 100, backgroundColor: 'rgba(255,255,255,0.1)' },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  cardLabel: { color: '#D1FAE5', fontSize: 12, fontWeight: '600', letterSpacing: 1 },
+  iconBg: { backgroundColor: 'rgba(255,255,255,0.2)', padding: 8, borderRadius: 20 },
+  pointsContainer: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 20 },
+  pointsValue: { fontSize: 56, fontWeight: '900', color: 'white' },
+  pointsUnit: { fontSize: 18, fontWeight: 'bold', color: '#A7F3D0', marginLeft: 8 },
+  levelContainer: { flexDirection: 'row', alignItems: 'center' },
+  levelBarBg: { flex: 1, height: 8, backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 4, marginRight: 10, overflow: 'hidden' },
+  levelBarFill: { height: '100%', backgroundColor: 'white', borderRadius: 4 },
+  levelText: { color: '#D1FAE5', fontSize: 12, fontWeight: 'bold' },
 
-  // Navigation
-  bottomNavContainer: { position: 'absolute', bottom: 30, left: 20, right: 20, alignItems: 'center' },
-  bottomNav: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', width: '100%', paddingVertical: 15, paddingHorizontal: 10, borderRadius: 30, marginBottom: 0 },
-  navItem: { alignItems: 'center', justifyContent: 'center', width: 40 },
-  navDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: COLORS.textDark, marginTop: 4 },
-  scanBtnWrapper: { top: -25 },
-  scanBtn: { width: 60, height: 60, borderRadius: 30, backgroundColor: COLORS.textDark, justifyContent: 'center', alignItems: 'center', shadowColor: COLORS.textDark, shadowOpacity: 0.3, shadowRadius: 10, elevation: 5 },
+  // Grid Stats
+  gridContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap' },
+  statCard: { width: '31%', padding: 12, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.6)' },
+  statIconBg: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  statLabel: { fontSize: 10, fontWeight: 'bold', color: 'rgba(6, 78, 59, 0.6)', textTransform: 'uppercase', marginBottom: 2 },
+  statValue: { fontSize: 18, fontWeight: '900', color: COLORS.textDark },
+
+  // Achievements
+  achievementCard: { padding: 20, backgroundColor: 'rgba(255,255,255,0.5)' },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: COLORS.textDark },
+  seeAllBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.5)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  seeAllText: { fontSize: 12, fontWeight: 'bold', color: '#047857', marginRight: 4 },
+  badgeItemHorizontal: { alignItems: 'center', width: 80, marginRight: 10 },
+  badgeIconBg: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', marginBottom: 8, shadowColor: "#000", shadowOffset: {width: 0, height: 2}, shadowOpacity: 0.1, elevation: 3 },
+  badgeName: { fontSize: 10, fontWeight: 'bold', color: COLORS.textDark, textAlign: 'center', height: 28 },
+  moreBadgeBtn: { alignItems: 'center', width: 80, justifyContent: 'flex-start' },
+  moreBadgeCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F3F4F6', borderWidth: 2, borderColor: '#6EE7B7', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  moreBadgeText: { color: COLORS.primary, fontWeight: 'bold', fontSize: 16 },
+  moreBadgeLabel: { fontSize: 10, fontWeight: 'bold', color: '#047857' },
 
   // Scan
-  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scanCard: { width: '90%', height: 400, alignItems: 'center', justifyContent: 'space-between', paddingVertical: 40 },
-  scanTitle: { fontSize: 20, fontWeight: 'bold', color: COLORS.textDark },
-  qrPlaceholder: { width: 200, height: 200, borderRadius: 20, borderWidth: 2, borderColor: COLORS.textDark, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.3)' },
-  actionButton: { backgroundColor: COLORS.textDark, paddingHorizontal: 30, paddingVertical: 12, borderRadius: 25 },
-  actionButtonText: { color: 'white', fontWeight: 'bold' },
-  hintText: { textAlign: 'center', fontSize: 12, color: COLORS.textDark, opacity: 0.7, paddingHorizontal: 20 },
-  floatingReward: { position: 'absolute', top: '30%', backgroundColor: COLORS.success, padding: 15, borderRadius: 15, alignItems: 'center', zIndex: 100 },
-  floatingText: { color: 'white', fontWeight: 'bold', fontSize: 24 },
-  floatingSub: { color: 'white', fontSize: 12 },
+  centerContent: { flex: 1, justifyContent: 'center', paddingBottom: 80 },
+  scanContainer: { padding: 30, alignItems: 'center', minHeight: 450, justifyContent: 'space-between' },
+  sectionTitleLarge: { fontSize: 24, fontWeight: 'bold', color: COLORS.textDark },
+  scanSubtitle: { fontSize: 14, color: '#059669', textAlign: 'center', marginBottom: 20 },
+  qrFrame: { width: 250, height: 250, borderWidth: 4, borderColor: '#6EE7B7', borderRadius: 30, borderStyle: 'dashed', backgroundColor: 'rgba(16, 185, 129, 0.05)', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', position: 'relative' },
+  scanLine: { width: '100%', height: 2, backgroundColor: COLORS.success, position: 'absolute', top: 0, shadowColor: COLORS.success, shadowOpacity: 1, shadowRadius: 10, elevation: 5 },
+  scanningText: { marginTop: 15, color: COLORS.textDark, fontWeight: '600' },
+  rewardPoints: { fontSize: 56, fontWeight: '900', color: COLORS.success },
+  rewardLabel: { fontSize: 14, fontWeight: 'bold', color: COLORS.textDark, letterSpacing: 2 },
+  rewardDetails: { flexDirection: 'row', marginTop: 15, backgroundColor: 'rgba(255,255,255,0.8)', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
+  rewardDetailText: { fontSize: 16, fontWeight: '600', color: COLORS.textDark },
+  dividerV: { width: 1, height: '100%', backgroundColor: '#D1D5DB', marginHorizontal: 15 },
+  mainBtn: { backgroundColor: COLORS.textDark, paddingVertical: 16, paddingHorizontal: 40, borderRadius: 20, shadowColor: COLORS.textDark, shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.3, elevation: 8 },
+  mainBtnText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
 
   // Wallet
-  screenHeader: { fontSize: 24, fontWeight: 'bold', color: COLORS.textDark, marginVertical: 20 },
-  balanceCard: { height: 180, justifyContent: 'center' },
-  balanceLabel: { color: COLORS.textDark, fontSize: 16 },
-  balanceValue: { fontSize: 36, fontWeight: 'bold', color: COLORS.textDark, marginVertical: 10 },
-  smallBtn: { backgroundColor: 'rgba(255,255,255,0.5)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 15 },
-  btnText: { color: COLORS.textDark, fontWeight: '600' },
-  rewardGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  rewardItem: { width: '48%', marginBottom: 15, alignItems: 'center' },
-  rewardName: { fontWeight: 'bold', marginTop: 10, color: COLORS.textDark },
-  rewardCost: { fontSize: 12, color: '#666', marginBottom: 10 },
-  redeemBtn: { backgroundColor: COLORS.textDark, width: '100%', padding: 8, borderRadius: 10, alignItems: 'center' },
-  redeemText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
+  screenTitle: { fontSize: 24, fontWeight: '900', color: COLORS.textDark, marginBottom: 20 },
+  walletCardShadow: { shadowColor: '#064E3B', shadowOffset: {width: 0, height: 8}, shadowOpacity: 0.3, elevation: 10, borderRadius: 32, marginBottom: 30 },
+  walletCard: { borderRadius: 32, padding: 24, position: 'relative' },
+  walletLabel: { color: '#A7F3D0', fontSize: 12, fontWeight: 'bold', letterSpacing: 1 },
+  walletValue: { fontSize: 48, fontWeight: '900', color: 'white', marginRight: 8 },
+  walletUnit: { fontSize: 24, fontWeight: 'bold', color: COLORS.primary },
+  walletActions: { flexDirection: 'row', marginTop: 10 },
+  walletBtnSecondary: { flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', padding: 12, borderRadius: 16, alignItems: 'center', marginRight: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  walletBtnPrimary: { flex: 1, backgroundColor: COLORS.success, padding: 12, borderRadius: 16, alignItems: 'center', shadowColor: COLORS.success, shadowOpacity: 0.4, elevation: 5 },
+  walletBtnTextSecondary: { color: 'white', fontWeight: 'bold' },
+  walletBtnTextPrimary: { color: 'white', fontWeight: 'bold' },
+  giftCard: { width: '48%', padding: 0, overflow: 'hidden', marginBottom: 15, backgroundColor: 'rgba(255,255,255,0.8)' },
+  giftIconBg: { height: 100, backgroundColor: 'rgba(52, 211, 153, 0.1)', justifyContent: 'center', alignItems: 'center' },
+  giftName: { fontWeight: 'bold', color: COLORS.textDark, fontSize: 14, marginBottom: 4 },
+  giftPrice: { color: COLORS.success, fontWeight: 'bold', fontSize: 12, marginBottom: 10 },
+  redeemBtn: { backgroundColor: '#D1FAE5', padding: 8, borderRadius: 10, alignItems: 'center' },
+  redeemBtnText: { color: '#064E3B', fontWeight: 'bold', fontSize: 12 },
 
-  // Stats / Map
-  highlightText: { color: COLORS.success, fontWeight: 'bold' },
-  rankRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' },
-  rankNum: { width: 30, fontWeight: 'bold', color: COLORS.textDark },
-  rankUser: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  rankAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#ddd', marginRight: 10 },
-  rankName: { color: COLORS.textDark },
-  rankScore: { fontWeight: 'bold', color: COLORS.success },
-  mapContainer: { flex: 1, backgroundColor: '#E5E7EB', borderRadius: 20, overflow: 'hidden', position: 'relative', marginBottom: 20 },
-  mapGrid: { position: 'absolute', width: '100%', height: '100%' },
-  streetH: { position: 'absolute', width: '100%', height: 10, backgroundColor: 'white', top: 100 },
-  streetV: { position: 'absolute', width: 10, height: '100%', backgroundColor: 'white', left: 80 },
+  // Wallet history
+  historyCard: { backgroundColor: 'rgba(255,255,255,0.95)' },
+  historyItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  historyType: { fontWeight: 'bold', color: COLORS.textDark },
+  historyDate: { fontSize: 12, color: '#6B7280', marginTop: 4 },
+  historyAmount: { fontWeight: '900', color: COLORS.textDark },
+  historyStatus: { fontSize: 12, marginTop: 4, fontWeight: '700' },
+
+  // Map
+  mapMockContainer: { flex: 1, borderRadius: 32, overflow: 'hidden', position: 'relative', borderWidth: 4, borderColor: 'white', height: 500, backgroundColor: '#F7FFFB' },
+  mapContent: { width: 900, height: 700, alignSelf: 'center', position: 'relative' },
+  mapBg: { flex: 1, backgroundColor: '#ECFDF5', position: 'relative' },
+  mapBgImproved: { flex: 1, borderRadius: 24, overflow: 'hidden', position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
+  landPatch: { position: 'absolute', width: 180, height: 140, borderRadius: 20, opacity: 0.9 },
+  mapControlsRow: { position: 'absolute', top: 16, right: 16, zIndex: 40, flexDirection: 'row', alignItems: 'center' },
+  zoomBadge: { backgroundColor: 'white', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)', marginRight: 8, shadowColor: '#000', shadowOpacity: 0.05, elevation: 3 },
+  zoomBadgeText: { color: COLORS.textDark, fontWeight: '800' },
+  zoomResetBtn: { backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
+  zoomResetText: { color: '#064E3B', fontWeight: '800' },
+  road: { position: 'absolute', width: '100%', height: 12, backgroundColor: 'white' },
+  roadVertical: { position: 'absolute', height: '100%', width: 12, backgroundColor: 'white' },
   mapMarker: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
+  markerIconWrap: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.08, elevation: 5, marginBottom: 6 },
+  markerLabelFloating: { position: 'absolute', left: 46, top: -8, backgroundColor: 'rgba(255,255,255,0.95)', paddingHorizontal: 8, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)', shadowColor: '#000', shadowOpacity: 0.06, elevation: 4, maxWidth: 170 },
+  markerLabel: { position: 'absolute', left: 36, top: -10, backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)', shadowColor: "#000", shadowOpacity: 0.06, shadowOffset: { width: 0, height: 4 }, shadowRadius: 6, elevation: 3, maxWidth: 140 },
+  markerLabelText: { fontSize: 12, color: COLORS.textDark, fontWeight: '600' },
+  userLocation: { position: 'absolute', top: '50%', left: '50%', transform: [{translateX: -10}, {translateY: -10}] },
+  userLocationImproved: { width: 34, height: 34, justifyContent: 'center', alignItems: 'center' },
   userDot: { position: 'absolute', width: 15, height: 15, borderRadius: 7.5, backgroundColor: '#3B82F6', borderWidth: 2, borderColor: 'white' },
-  mapLegend: { position: 'absolute', bottom: 20, left: 10, padding: 10 },
-  row: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  dot: { width: 8, height: 8, borderRadius: 4, marginRight: 5 }
+  userPulse: { position: 'absolute', width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(59, 130, 246, 0.2)', top: -20, left: -20 },
+  machineLabel: { position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(255,255,255,0.8)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, fontSize: 12, fontWeight: '600', color: COLORS.textDark },
+
+  mapHint: { position: 'absolute', left: 16, bottom: 12, backgroundColor: 'rgba(255,255,255,0.95)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)', shadowColor: '#000', shadowOpacity: 0.03, elevation: 4 },
+  mapHintText: { color: '#064E3B', fontWeight: '700' },
+
+  // Modal
+  modalContainer: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalContent: { backgroundColor: '#F9FAFB', borderTopLeftRadius: 30, borderTopRightRadius: 30, height: '85%', padding: 20 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  modalTitle: { fontSize: 24, fontWeight: '900', color: COLORS.textDark },
+  modalSubtitle: { fontSize: 14, color: '#059669', marginTop: 4 },
+  closeBtn: { padding: 8, backgroundColor: '#E5E7EB', borderRadius: 20 },
+  badgesGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 40 },
+  badgeCard: { width: '48%', backgroundColor: 'white', borderRadius: 20, padding: 16, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: '#F3F4F6', elevation: 2 },
+  badgeLocked: { opacity: 0.7, backgroundColor: '#F3F4F6' },
+  badgeIconBig: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginBottom: 12, elevation: 4 },
+  badgeCardName: { fontWeight: 'bold', color: COLORS.textDark, marginBottom: 4, textAlign: 'center' },
+  badgeCardDesc: { fontSize: 12, color: '#6B7280', textAlign: 'center' },
+  lockOverlay: { position: 'absolute', top: 10, right: 10, backgroundColor: '#4B5563', padding: 4, borderRadius: 12 },
+
+  // Navigation
+  navContainer: { position: 'absolute', bottom: 30, left: 20, right: 20 },
+  navBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, backgroundColor: 'rgba(255,255,255,0.95)' },
+  navItem: { alignItems: 'center', justifyContent: 'center' },
+  activeDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: COLORS.primary, marginTop: 4 },
+  scanBtnContainer: { position: 'relative', top: -25 },
+  scanBtn: { width: 64, height: 64, borderRadius: 32, backgroundColor: COLORS.textDark, justifyContent: 'center', alignItems: 'center', shadowColor: COLORS.textDark, shadowOpacity: 0.4, shadowOffset: {width: 0, height: 8}, elevation: 10, borderWidth: 4, borderColor: '#ECFDF5' },
+  mapAddBtn: { backgroundColor: '#10B981', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, marginRight: 8 },
+  mapAddText: { color: 'white', fontWeight: '800' },
 });
