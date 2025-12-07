@@ -14,7 +14,8 @@ import {
   Alert,
   StatusBar,
   Platform,
-  Easing
+  Easing,
+  TextInput
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
@@ -110,6 +111,17 @@ const GlassCard = ({ children, style, onPress }) => {
 
 // --- MAIN APP ---
 export default function App() {
+  // All Auth States
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [signupName, setSignupName] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+
+  // Main App States
   const [activeTab, setActiveTab] = useState('Home');
   const [points, setPoints] = useState(1280);
   const [bottles, setBottles] = useState(42);
@@ -125,6 +137,8 @@ export default function App() {
   ]);
   // Control wallet history modal visibility
   const [showWalletHistory, setShowWalletHistory] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [editName, setEditName] = useState('Hàn Quốc Bảo');
   
   // State Modal & Scan
   const [showAllBadges, setShowAllBadges] = useState(false);
@@ -292,13 +306,12 @@ export default function App() {
     <View style={styles.header}>
       <View>
         <Text style={styles.appName}>GREENMATE BOX</Text>
-        <Text style={styles.welcomeText}>Xin chào, {MOCK_USER.name}!</Text>
+        <Text style={styles.welcomeText}>Xin chào, {editName}!</Text>
       </View>
-      <View style={styles.avatarContainer}>
+      <TouchableOpacity style={styles.avatarContainer} onPress={() => setShowProfileModal(true)}>
         <Image source={MOCK_USER.avatar} style={styles.avatar} />
-
         <View style={styles.onlineDot} />
-      </View>
+      </TouchableOpacity>
     </View>
   );
 
@@ -807,6 +820,264 @@ export default function App() {
     );
   };
 
+  const renderLogin = () => {
+    return (
+      <View style={styles.container}>
+        <LinearGradient
+          colors={['#ECFDF5', '#F0FDF4', '#FFFFFF']}
+          style={styles.background}
+        />
+
+        <SafeAreaView style={styles.safeArea}>
+          <ScrollView contentContainerStyle={styles.authContainer}>
+            {/* Logo & Title */}
+            <View style={styles.authLogoSection}>
+              <View style={styles.authLogoBg}>
+                <Recycle size={56} color="white" />
+              </View>
+              <Text style={styles.authAppName}>GREENMATE BOX</Text>
+              <Text style={styles.authSubtitle}>Bảo vệ môi trường, nhận thưởng</Text>
+            </View>
+
+            {/* Login Form */}
+            <View style={styles.authFormSection}>
+              <Text style={styles.authFormTitle}>Đăng Nhập</Text>
+
+              {/* Email Input */}
+              <View style={styles.authInputGroup}>
+                <Text style={styles.authInputLabel}>Email</Text>
+                <View style={styles.authInputContainer}>
+                  <Text style={styles.authInputIcon}>✉️</Text>
+                  <TextInput
+                    style={styles.authInput}
+                    placeholder="your@email.com"
+                    placeholderTextColor="#9CA3AF"
+                    value={loginEmail}
+                    onChangeText={setLoginEmail}
+                    keyboardType="email-address"
+                  />
+                </View>
+              </View>
+
+              {/* Password Input */}
+              <View style={styles.authInputGroup}>
+                <Text style={styles.authInputLabel}>Mật khẩu</Text>
+                <View style={styles.authInputContainer}>
+                  <Text style={styles.authInputIcon}>🔐</Text>
+                  <TextInput
+                    style={styles.authInput}
+                    placeholder="Nhập mật khẩu"
+                    placeholderTextColor="#9CA3AF"
+                    value={loginPassword}
+                    onChangeText={setLoginPassword}
+                    secureTextEntry
+                  />
+                </View>
+              </View>
+
+              {/* Login Button */}
+              <TouchableOpacity
+                style={styles.authMainBtn}
+                onPress={() => {
+                  if (loginEmail && loginPassword) {
+                    setIsAuthenticated(true);
+                  } else {
+                    Alert.alert('Lỗi', 'Vui lòng nhập email và mật khẩu');
+                  }
+                }}
+              >
+                <LinearGradient
+                  colors={['#10B981', '#059669']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.authMainBtnGradient}
+                >
+                  <Text style={styles.authMainBtnText}>Đăng Nhập</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Forgot Password */}
+              <TouchableOpacity style={styles.authForgotBtn}>
+                <Text style={styles.authForgotText}>Quên mật khẩu?</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Divider */}
+            <View style={styles.authDivider}>
+              <View style={styles.authDividerLine} />
+              <Text style={styles.authDividerText}>hoặc</Text>
+              <View style={styles.authDividerLine} />
+            </View>
+
+            {/* Social Login */}
+            <View style={styles.authSocialSection}>
+              <TouchableOpacity style={styles.authSocialBtn}>
+                <Text style={styles.authSocialIcon}>👤</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.authSocialBtn}>
+                <Text style={styles.authSocialIcon}>f</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.authSocialBtn}>
+                <Text style={styles.authSocialIcon}>🍎</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Switch to Signup */}
+            <View style={styles.authSwitchContainer}>
+              <Text style={styles.authSwitchText}>Chưa có tài khoản? </Text>
+              <TouchableOpacity onPress={() => {
+                setAuthMode('signup');
+                setLoginEmail('');
+                setLoginPassword('');
+              }}>
+                <Text style={styles.authSwitchLink}>Đăng ký ngay</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    );
+  };
+
+  const renderSignup = () => {
+    return (
+      <View style={styles.container}>
+        <LinearGradient
+          colors={['#ECFDF5', '#F0FDF4', '#FFFFFF']}
+          style={styles.background}
+        />
+
+        <SafeAreaView style={styles.safeArea}>
+          <ScrollView contentContainerStyle={styles.authContainer}>
+            {/* Logo & Title */}
+            <View style={styles.authLogoSection}>
+              <View style={styles.authLogoBg}>
+                <Leaf size={56} color="white" />
+              </View>
+              <Text style={styles.authAppName}>GREENMATE BOX</Text>
+              <Text style={styles.authSubtitle}>Tham gia cộng đồng xanh</Text>
+            </View>
+
+            {/* Signup Form */}
+            <View style={styles.authFormSection}>
+              <Text style={styles.authFormTitle}>Đăng Ký</Text>
+
+              {/* Name Input */}
+              <View style={styles.authInputGroup}>
+                <Text style={styles.authInputLabel}>Họ và tên</Text>
+                <View style={styles.authInputContainer}>
+                  <Text style={styles.authInputIcon}>👤</Text>
+                  <TextInput
+                    style={styles.authInput}
+                    placeholder="Nhập tên của bạn"
+                    placeholderTextColor="#9CA3AF"
+                    value={signupName}
+                    onChangeText={setSignupName}
+                  />
+                </View>
+              </View>
+
+              {/* Email Input */}
+              <View style={styles.authInputGroup}>
+                <Text style={styles.authInputLabel}>Email</Text>
+                <View style={styles.authInputContainer}>
+                  <Text style={styles.authInputIcon}>✉️</Text>
+                  <TextInput
+                    style={styles.authInput}
+                    placeholder="your@email.com"
+                    placeholderTextColor="#9CA3AF"
+                    value={signupEmail}
+                    onChangeText={setSignupEmail}
+                    keyboardType="email-address"
+                  />
+                </View>
+              </View>
+
+              {/* Password Input */}
+              <View style={styles.authInputGroup}>
+                <Text style={styles.authInputLabel}>Mật khẩu</Text>
+                <View style={styles.authInputContainer}>
+                  <Text style={styles.authInputIcon}>🔐</Text>
+                  <TextInput
+                    style={styles.authInput}
+                    placeholder="Tối thiểu 6 ký tự"
+                    placeholderTextColor="#9CA3AF"
+                    value={signupPassword}
+                    onChangeText={setSignupPassword}
+                    secureTextEntry
+                  />
+                </View>
+              </View>
+
+              {/* Confirm Password Input */}
+              <View style={styles.authInputGroup}>
+                <Text style={styles.authInputLabel}>Xác nhận mật khẩu</Text>
+                <View style={styles.authInputContainer}>
+                  <Text style={styles.authInputIcon}>🔐</Text>
+                  <TextInput
+                    style={styles.authInput}
+                    placeholder="Nhập lại mật khẩu"
+                    placeholderTextColor="#9CA3AF"
+                    value={signupConfirmPassword}
+                    onChangeText={setSignupConfirmPassword}
+                    secureTextEntry
+                  />
+                </View>
+              </View>
+
+              {/* Terms */}
+              <View style={styles.authTermsContainer}>
+                <Text style={styles.authTermsText}>
+                  Bằng cách đăng ký, bạn đồng ý với {' '}
+                  <Text style={styles.authTermsLink}>Điều khoản dịch vụ</Text>
+                </Text>
+              </View>
+
+              {/* Signup Button */}
+              <TouchableOpacity
+                style={styles.authMainBtn}
+                onPress={() => {
+                  if (signupName && signupEmail && signupPassword && signupConfirmPassword) {
+                    if (signupPassword === signupConfirmPassword) {
+                      setIsAuthenticated(true);
+                    } else {
+                      Alert.alert('Lỗi', 'Mật khẩu không khớp');
+                    }
+                  } else {
+                    Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
+                  }
+                }}
+              >
+                <LinearGradient
+                  colors={['#10B981', '#059669']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.authMainBtnGradient}
+                >
+                  <Text style={styles.authMainBtnText}>Đăng Ký</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+
+            {/* Switch to Login */}
+            <View style={styles.authSwitchContainer}>
+              <Text style={styles.authSwitchText}>Đã có tài khoản? </Text>
+              <TouchableOpacity onPress={() => {
+                setAuthMode('login');
+                setSignupName('');
+                setSignupEmail('');
+                setSignupPassword('');
+                setSignupConfirmPassword('');
+              }}>
+                <Text style={styles.authSwitchLink}>Đăng nhập</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    );
+  };
+
   // --- MODAL ---
   const renderBadgesModal = () => (
     <Modal
@@ -890,60 +1161,193 @@ export default function App() {
     </Modal>
   );
 
+  const renderProfileModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={showProfileModal}
+      onRequestClose={() => setShowProfileModal(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <View>
+              <Text style={styles.modalTitle}>Hồ Sơ Cá Nhân</Text>
+              <Text style={styles.modalSubtitle}>Quản lý thông tin của bạn</Text>
+            </View>
+            <TouchableOpacity onPress={() => setShowProfileModal(false)} style={styles.closeBtn}>
+              <X size={24} color="#374151" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom: 40}}>
+            {/* Profile Info */}
+            <View style={styles.profileSection}>
+              <View style={styles.profileAvatarBg}>
+                <Image source={MOCK_USER.avatar} style={styles.profileAvatar} />
+              </View>
+              <Text style={styles.profileName}>{editName}</Text>
+              <Text style={styles.profileLevel}>{MOCK_USER.level}</Text>
+            </View>
+
+            {/* Stats Row */}
+            <View style={styles.profileStatsRow}>
+              <View style={styles.profileStatItem}>
+                <Text style={styles.profileStatValue}>{points}</Text>
+                <Text style={styles.profileStatLabel}>Eco</Text>
+              </View>
+              <View style={styles.profileStatDivider} />
+              <View style={styles.profileStatItem}>
+                <Text style={styles.profileStatValue}>{bottles + cans}</Text>
+                <Text style={styles.profileStatLabel}>Rác tái chế</Text>
+              </View>
+              <View style={styles.profileStatDivider} />
+              <View style={styles.profileStatItem}>
+                <Text style={styles.profileStatValue}>{co2}kg</Text>
+                <Text style={styles.profileStatLabel}>CO₂ giảm</Text>
+              </View>
+            </View>
+
+            {/* Edit Profile Section */}
+            <View style={styles.profileFormSection}>
+              <Text style={styles.profileFormTitle}>Chỉnh Sửa Thông Tin</Text>
+              
+              <View style={styles.profileInputGroup}>
+                <Text style={styles.profileInputLabel}>Họ và tên</Text>
+                <View style={styles.profileInputContainer}>
+                  <TextInput
+                    style={styles.profileInput}
+                    value={editName}
+                    onChangeText={setEditName}
+                    placeholder="Nhập tên"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.profileInputGroup}>
+                <Text style={styles.profileInputLabel}>Email</Text>
+                <View style={styles.profileInputContainer}>
+                  <TextInput
+                    style={styles.profileInput}
+                    value={loginEmail}
+                    editable={false}
+                    placeholder="Email"
+                  />
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.profileSaveBtn}
+                onPress={() => {
+                  Alert.alert('Thành công', 'Cập nhật hồ sơ thành công!');
+                  setShowProfileModal(false);
+                }}
+              >
+                <LinearGradient
+                  colors={['#10B981', '#059669']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.profileSaveBtnGradient}
+                >
+                  <Text style={styles.profileSaveBtnText}>Lưu Thay Đổi</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+
+            {/* Logout Button */}
+            <TouchableOpacity
+              style={styles.profileLogoutBtn}
+              onPress={() => {
+                Alert.alert(
+                  'Đăng xuất',
+                  'Bạn chắc chắn muốn đăng xuất?',
+                  [
+                    { text: 'Hủy', onPress: () => {} },
+                    {
+                      text: 'Đăng xuất',
+                      onPress: () => {
+                        setIsAuthenticated(false);
+                        setAuthMode('login');
+                        setLoginEmail('');
+                        setLoginPassword('');
+                        setShowProfileModal(false);
+                      },
+                      style: 'destructive'
+                    }
+                  ]
+                );
+              }}
+            >
+              <Text style={styles.profileLogoutBtnText}>🚪 Đăng Xuất</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ECFDF5" />
       
-      {/* Background Gradient */}
-      <LinearGradient
-        colors={['#ECFDF5', '#F0FDF4', '#FFFFFF']}
-        style={styles.background}
-      />
+      {/* Show Auth Screens if not authenticated */}
+      {!isAuthenticated ? (
+        authMode === 'login' ? renderLogin() : renderSignup()
+      ) : (
+        <>
+          {/* Background Gradient */}
+          <LinearGradient
+            colors={['#ECFDF5', '#F0FDF4', '#FFFFFF']}
+            style={styles.background}
+          />
 
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.contentContainer}>
-            {activeTab === 'Home' && renderDashboard()}
-            {activeTab === 'Scan' && renderScan()}
-            {activeTab === 'Wallet' && renderWallet()}
-            {activeTab === 'Stats' && renderStats()}
-            {activeTab === 'Map' && renderMap()}
-        </View>
-      </SafeAreaView>
+          <SafeAreaView style={styles.safeArea}>
+            <View style={styles.contentContainer}>
+                {activeTab === 'Home' && renderDashboard()}
+                {activeTab === 'Scan' && renderScan()}
+                {activeTab === 'Wallet' && renderWallet()}
+                {activeTab === 'Stats' && renderStats()}
+                {activeTab === 'Map' && renderMap()}
+            </View>
+          </SafeAreaView>
 
-      {/* Bottom Navigation */}
-      <View style={styles.navContainer}>
-        <GlassCard style={styles.navBar}>
-          <TouchableOpacity onPress={() => setActiveTab('Home')} style={styles.navItem}>
-             <Home color={activeTab === 'Home' ? COLORS.primary : '#9CA3AF'} size={24} />
-             {activeTab === 'Home' && <View style={styles.activeDot} />}
-          </TouchableOpacity>
-          
-          <TouchableOpacity onPress={() => setActiveTab('Map')} style={styles.navItem}>
-             <MapPin color={activeTab === 'Map' ? COLORS.primary : '#9CA3AF'} size={24} />
-             {activeTab === 'Map' && <View style={styles.activeDot} />}
-          </TouchableOpacity>
+          {/* Bottom Navigation */}
+          <View style={styles.navContainer}>
+            <GlassCard style={styles.navBar}>
+              <TouchableOpacity onPress={() => setActiveTab('Home')} style={styles.navItem}>
+                 <Home color={activeTab === 'Home' ? COLORS.primary : '#9CA3AF'} size={24} />
+                 {activeTab === 'Home' && <View style={styles.activeDot} />}
+              </TouchableOpacity>
+              
+              <TouchableOpacity onPress={() => setActiveTab('Map')} style={styles.navItem}>
+                 <MapPin color={activeTab === 'Map' ? COLORS.primary : '#9CA3AF'} size={24} />
+                 {activeTab === 'Map' && <View style={styles.activeDot} />}
+              </TouchableOpacity>
 
-          <View style={styles.scanBtnContainer}>
-            <TouchableOpacity onPress={() => setActiveTab('Scan')} style={styles.scanBtn}>
-               <Scan color="white" size={28} />
-            </TouchableOpacity>
+              <View style={styles.scanBtnContainer}>
+                <TouchableOpacity onPress={() => setActiveTab('Scan')} style={styles.scanBtn}>
+                   <Scan color="white" size={28} />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity onPress={() => setActiveTab('Stats')} style={styles.navItem}>
+                 <BarChart3 color={activeTab === 'Stats' ? COLORS.primary : '#9CA3AF'} size={24} />
+                 {activeTab === 'Stats' && <View style={styles.activeDot} />}
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => setActiveTab('Wallet')} style={styles.navItem}>
+                 <Wallet color={activeTab === 'Wallet' ? COLORS.primary : '#9CA3AF'} size={24} />
+                 {activeTab === 'Wallet' && <View style={styles.activeDot} />}
+              </TouchableOpacity>
+            </GlassCard>
           </View>
 
-          <TouchableOpacity onPress={() => setActiveTab('Stats')} style={styles.navItem}>
-             <BarChart3 color={activeTab === 'Stats' ? COLORS.primary : '#9CA3AF'} size={24} />
-             {activeTab === 'Stats' && <View style={styles.activeDot} />}
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => setActiveTab('Wallet')} style={styles.navItem}>
-             <Wallet color={activeTab === 'Wallet' ? COLORS.primary : '#9CA3AF'} size={24} />
-             {activeTab === 'Wallet' && <View style={styles.activeDot} />}
-          </TouchableOpacity>
-        </GlassCard>
-      </View>
-
-      {/* Modal Overlay */}
-      {renderBadgesModal()}
-      {renderWalletHistoryModal()}
+          {/* Modal Overlay */}
+          {renderBadgesModal()}
+          {renderWalletHistoryModal()}
+          {renderProfileModal()}
+        </>
+      )}
     </View>
   );
 }
@@ -1317,5 +1721,315 @@ const styles = StyleSheet.create({
   activityDivider: { 
     height: 1, 
     backgroundColor: '#F3F4F6' 
+  },
+
+  // Auth Screens
+  authContainer: { 
+    paddingHorizontal: 20, 
+    paddingVertical: 40,
+    flexGrow: 1,
+    justifyContent: 'space-between'
+  },
+  authLogoSection: {
+    alignItems: 'center',
+    marginBottom: 40
+  },
+  authLogoBg: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: COLORS.success,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8
+  },
+  authAppName: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: COLORS.textDark,
+    letterSpacing: 2,
+    marginBottom: 8
+  },
+  authSubtitle: {
+    fontSize: 14,
+    color: '#059669',
+    fontWeight: '600'
+  },
+  authFormSection: {
+    marginBottom: 30
+  },
+  authFormTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: COLORS.textDark,
+    marginBottom: 24
+  },
+  authInputGroup: {
+    marginBottom: 16
+  },
+  authInputLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textDark,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5
+  },
+  authInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 12,
+    paddingVertical: 2
+  },
+  authInputIcon: {
+    fontSize: 20,
+    marginRight: 10
+  },
+  authInput: {
+    flex: 1,
+    height: 48,
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.textDark
+  },
+  authMainBtn: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginTop: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8
+  },
+  authMainBtnGradient: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  authMainBtnText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 1
+  },
+  authForgotBtn: {
+    alignItems: 'center',
+    marginTop: 16
+  },
+  authForgotText: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: '600'
+  },
+  authDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24
+  },
+  authDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB'
+  },
+  authDividerText: {
+    paddingHorizontal: 12,
+    color: '#9CA3AF',
+    fontSize: 12,
+    fontWeight: '600'
+  },
+  authSocialSection: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 24
+  },
+  authSocialBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  authSocialIcon: {
+    fontSize: 24
+  },
+  authSwitchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24
+  },
+  authSwitchText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500'
+  },
+  authSwitchLink: {
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: '700'
+  },
+  authTermsContainer: {
+    marginTop: 16,
+    marginBottom: 24
+  },
+  authTermsText: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '500',
+    lineHeight: 18,
+    textAlign: 'center'
+  },
+  authTermsLink: {
+    color: COLORS.primary,
+    fontWeight: '700'
+  },
+
+  // Profile Modal
+  profileSection: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    marginBottom: 20
+  },
+  profileAvatarBg: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(52, 211, 153, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 3,
+    borderColor: COLORS.primary,
+    overflow: 'hidden'
+  },
+  profileAvatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48
+  },
+  profileName: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: COLORS.textDark,
+    marginBottom: 4
+  },
+  profileLevel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.primary
+  },
+  profileStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    marginBottom: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    marginHorizontal: 20,
+    borderRadius: 20
+  },
+  profileStatItem: {
+    alignItems: 'center',
+    flex: 1
+  },
+  profileStatValue: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: COLORS.primary,
+    marginBottom: 4
+  },
+  profileStatLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6B7280'
+  },
+  profileStatDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: '#E5E7EB'
+  },
+  profileFormSection: {
+    paddingHorizontal: 20,
+    marginBottom: 20
+  },
+  profileFormTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.textDark,
+    marginBottom: 16
+  },
+  profileInputGroup: {
+    marginBottom: 12
+  },
+  profileInputLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textDark,
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5
+  },
+  profileInputContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 12
+  },
+  profileInput: {
+    height: 44,
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.textDark
+  },
+  profileSaveBtn: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5
+  },
+  profileSaveBtnGradient: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  profileSaveBtnText: {
+    color: 'white',
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.5
+  },
+  profileLogoutBtn: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    paddingVertical: 14,
+    backgroundColor: '#FEE2E2',
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FECACA'
+  },
+  profileLogoutBtnText: {
+    color: COLORS.danger,
+    fontSize: 15,
+    fontWeight: '800'
   },
 });
