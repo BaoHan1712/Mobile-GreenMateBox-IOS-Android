@@ -59,7 +59,7 @@ const MOCK_USER = {
   avatar: require('./assets/imgage/bao.png'), 
 };
 
-// OLD: const NEARBY_MACHINES = [ ... ]
+
 // Replace with an initial list that includes more positions:
 const INITIAL_NEARBY_MACHINES = [
   { id: 1, name: "CS1 ĐH Lạc Hồng", status: "active", capacity: 80, types: ["PET", "ALU"], x: 100, y: 150 },
@@ -85,7 +85,7 @@ const MOCK_BADGES = [
 
 ];
 
-// Gifts with images from assets/imgage (use existing bao.png as example)
+// Gifts with images from assets/imgage 
 const GIFT_ITEMS = [
   { id: 'g1', name: 'Nhật BILI', cost: 1, img: require('./assets/imgage/nhat.png') },
   { id: 'g2', name: 'Kẹo trẻ em', cost: 10, img: require('./assets/imgage/keo.jpg') },
@@ -468,7 +468,7 @@ export default function App() {
            </View>
            <View style={styles.walletActions}>
                   <TouchableOpacity style={styles.walletBtnSecondary} onPress={() => setShowWalletHistory(true)}><Text style={styles.walletBtnTextSecondary}>Lịch sử</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.walletBtnPrimary}><Text style={styles.walletBtnTextPrimary}>Nạp điểm</Text></TouchableOpacity>
+              {/* <TouchableOpacity style={styles.walletBtnPrimary}><Text style={styles.walletBtnTextPrimary}>Nạp điểm</Text></TouchableOpacity> */}
            </View>
          </LinearGradient>
        </View>
@@ -495,11 +495,213 @@ export default function App() {
     </ScrollView>
   );
 
-  const renderStats = () => (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text style={{color: COLORS.textDark}}>Tính năng Thống kê đang phát triển...</Text>
-    </View>
-  );
+  const renderStats = () => {
+    const statsData = [
+      { label: 'T2', value: 45, maxValue: 100 },
+      { label: 'T3', value: 62, maxValue: 100 },
+      { label: 'T4', value: 58, maxValue: 100 },
+      { label: 'T5', value: 78, maxValue: 100 },
+      { label: 'T6', value: 85, maxValue: 100 },
+      { label: 'T7', value: 72, maxValue: 100 },
+      { label: 'CN', value: 90, maxValue: 100 },
+    ];
+
+    return (
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+        <Text style={styles.screenTitle}>Thống kê tuần</Text>
+
+        {/* Main Stats Card */}
+        <GlassCard style={[styles.statsMainCard, { marginBottom: 20 }]}>
+          <View style={styles.statsMainHeader}>
+            <View>
+              <Text style={styles.statsMainLabel}>TỔNG LƯỢT ĐỔI TUẦN NÀY</Text>
+              <Text style={styles.statsMainValue}>42</Text>
+            </View>
+            <View style={styles.statsMainIcon}>
+              <BarChart3 size={32} color={COLORS.primary} />
+            </View>
+          </View>
+
+          <View style={styles.statsMainDivider} />
+
+          <View style={styles.statsMainRow}>
+            <View style={styles.statsMainItem}>
+              <Text style={styles.statsMainItemLabel}>Tăng từ tuần trước</Text>
+              <View style={styles.statsMainItemValue}>
+                <Zap size={14} color={COLORS.success} style={{ marginRight: 4 }} />
+                <Text style={[styles.statsMainItemNumber, { color: COLORS.success }]}>+12%</Text>
+              </View>
+            </View>
+            <View style={[styles.statsMainItem, { borderLeftWidth: 1, borderLeftColor: 'rgba(0,0,0,0.1)', paddingLeftWidth: 15 }]}>
+              <Text style={styles.statsMainItemLabel}>Ranking</Text>
+              <View style={styles.statsMainItemValue}>
+                <Star size={14} color={COLORS.warning} style={{ marginRight: 4 }} />
+                <Text style={[styles.statsMainItemNumber, { color: COLORS.warning }]}>Top 5</Text>
+              </View>
+            </View>
+          </View>
+        </GlassCard>
+
+        {/* Bar Chart */}
+        <GlassCard style={{ padding: 20, marginBottom: 20 }}>
+          <View style={{ marginBottom: 15 }}>
+            <Text style={styles.statsChartTitle}>Lượt đổi hàng ngày</Text>
+            <Text style={styles.statsChartSubtitle}>Theo tuần (Thứ 2 - Chủ nhật)</Text>
+          </View>
+
+          <View style={styles.barChartContainer}>
+            {statsData.map((item, idx) => (
+              <View key={idx} style={styles.barChartItem}>
+                <View style={styles.barChartBar}>
+                  <Animated.View
+                    style={[
+                      styles.barFill,
+                      {
+                        height: `${(item.value / item.maxValue) * 100}%`,
+                        backgroundColor: item.value >= 70 ? COLORS.success : item.value >= 50 ? COLORS.warning : COLORS.danger,
+                      }
+                    ]}
+                  />
+                </View>
+                <Text style={styles.barChartLabel}>{item.label}</Text>
+                <Text style={styles.barChartValue}>{item.value}</Text>
+              </View>
+            ))}
+          </View>
+        </GlassCard>
+
+        {/* Performance Metrics */}
+        <Text style={[styles.sectionTitle, { marginBottom: 15 }]}>Chi tiết hoạt động</Text>
+
+        <GlassCard style={{ padding: 0, overflow: 'hidden', marginBottom: 15 }}>
+          <View style={styles.metricItem}>
+            <View style={[styles.metricIconBg, {backgroundColor: '#DBEAFE'}]}>
+              <Leaf size={20} color="#2563EB" />
+            </View>
+            <View style={styles.metricContent}>
+              <Text style={styles.metricLabel}>Chai nhựa</Text>
+              <Text style={styles.metricValue}>198 cái</Text>
+            </View>
+            <View style={styles.metricTrend}>
+              <View style={[styles.trendBadge, { backgroundColor: '#DBEAFE' }]}>
+                <Zap size={12} color="#2563EB" style={{ marginRight: 2 }} />
+                <Text style={[styles.trendText, { color: '#2563EB' }]}>+24%</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.metricDivider} />
+
+          <View style={styles.metricItem}>
+            <View style={[styles.metricIconBg, {backgroundColor: '#FEE2E2'}]}>
+              <Zap size={20} color={COLORS.danger} />
+            </View>
+            <View style={styles.metricContent}>
+              <Text style={styles.metricLabel}>Lon nhôm</Text>
+              <Text style={styles.metricValue}>127 cái</Text>
+            </View>
+            <View style={styles.metricTrend}>
+              <View style={[styles.trendBadge, { backgroundColor: '#FEE2E2' }]}>
+                <Zap size={12} color={COLORS.danger} style={{ marginRight: 2 }} />
+                <Text style={[styles.trendText, { color: COLORS.danger }]}>+18%</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.metricDivider} />
+
+          <View style={styles.metricItem}>
+            <View style={[styles.metricIconBg, {backgroundColor: '#FFEDD5'}]}>
+              <Droplets size={20} color="#EA580C" />
+            </View>
+            <View style={styles.metricContent}>
+              <Text style={styles.metricLabel}>CO₂ đã giảm</Text>
+              <Text style={styles.metricValue}>52.3 kg</Text>
+            </View>
+            <View style={styles.metricTrend}>
+              <View style={[styles.trendBadge, { backgroundColor: '#FFEDD5' }]}>
+                <Zap size={12} color="#EA580C" style={{ marginRight: 2 }} />
+                <Text style={[styles.trendText, { color: '#EA580C' }]}>+31%</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.metricDivider} />
+
+          <View style={styles.metricItem}>
+            <View style={[styles.metricIconBg, {backgroundColor: '#DCFCE7'}]}>
+              <Leaf size={20} color={COLORS.success} />
+            </View>
+            <View style={styles.metricContent}>
+              <Text style={styles.metricLabel}>Cây xanh trồng</Text>
+              <Text style={styles.metricValue}>26 cây</Text>
+            </View>
+            <View style={styles.metricTrend}>
+              <View style={[styles.trendBadge, { backgroundColor: '#DCFCE7' }]}>
+                <Zap size={12} color={COLORS.success} style={{ marginRight: 2 }} />
+                <Text style={[styles.trendText, { color: COLORS.success }]}>+15%</Text>
+              </View>
+            </View>
+          </View>
+        </GlassCard>
+
+        {/* Recent Activities */}
+        <Text style={[styles.sectionTitle, { marginBottom: 15 }]}>Hoạt động gần đây</Text>
+
+        <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
+          <View style={styles.activityItem}>
+            <View style={[styles.activityIconBg, {backgroundColor: '#DBEAFE'}]}>
+              <Recycle size={18} color="#2563EB" />
+            </View>
+            <View style={styles.activityContent}>
+              <Text style={styles.activityTitle}>Đổi 5 chai nhựa</Text>
+              <Text style={styles.activityTime}>Hôm nay - 14:30</Text>
+            </View>
+            <Text style={styles.activityPoints}>+25</Text>
+          </View>
+
+          <View style={styles.activityDivider} />
+
+          <View style={styles.activityItem}>
+            <View style={[styles.activityIconBg, {backgroundColor: '#FEE2E2'}]}>
+              <Gift size={18} color={COLORS.danger} />
+            </View>
+            <View style={styles.activityContent}>
+              <Text style={styles.activityTitle}>Đổi quà - Bình nước</Text>
+              <Text style={styles.activityTime}>Hôm qua - 10:15</Text>
+            </View>
+            <Text style={[styles.activityPoints, { color: COLORS.danger }]}>-400</Text>
+          </View>
+
+          <View style={styles.activityDivider} />
+
+          <View style={styles.activityItem}>
+            <View style={[styles.activityIconBg, {backgroundColor: '#FFEDD5'}]}>
+              <Award size={18} color="#EA580C" />
+            </View>
+            <View style={styles.activityContent}>
+              <Text style={styles.activityTitle}>Mở khóa huy hiệu</Text>
+              <Text style={styles.activityTime}>2 ngày trước</Text>
+            </View>
+            <Text style={[styles.activityPoints, { color: '#EA580C' }]}>🔓</Text>
+          </View>
+
+          <View style={styles.activityDivider} />
+
+          <View style={styles.activityItem}>
+            <View style={[styles.activityIconBg, {backgroundColor: '#DCFCE7'}]}>
+              <Leaf size={18} color={COLORS.success} />
+            </View>
+            <View style={styles.activityContent}>
+              <Text style={styles.activityTitle}>Trồng cây xanh</Text>
+              <Text style={styles.activityTime}>3 ngày trước</Text>
+            </View>
+            <Text style={[styles.activityPoints, { color: COLORS.success }]}>+1 cây</Text>
+          </View>
+        </GlassCard>
+      </ScrollView>
+    );
+  };
 
   const renderMap = () => {
     const animatedStyle = {
@@ -917,4 +1119,203 @@ const styles = StyleSheet.create({
   scanBtn: { width: 64, height: 64, borderRadius: 32, backgroundColor: COLORS.textDark, justifyContent: 'center', alignItems: 'center', shadowColor: COLORS.textDark, shadowOpacity: 0.4, shadowOffset: {width: 0, height: 8}, elevation: 10, borderWidth: 4, borderColor: '#ECFDF5' },
   mapAddBtn: { backgroundColor: '#10B981', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, marginRight: 8 },
   mapAddText: { color: 'white', fontWeight: '800' },
+
+  // Stats
+  statsMainCard: { 
+    backgroundColor: 'rgba(255,255,255,0.8)', 
+    padding: 20, 
+    marginBottom: 0 
+  },
+  statsMainHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'flex-start',
+    marginBottom: 15
+  },
+  statsMainLabel: { 
+    fontSize: 11, 
+    fontWeight: '700', 
+    color: 'rgba(6, 78, 59, 0.6)', 
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 8
+  },
+  statsMainValue: { 
+    fontSize: 42, 
+    fontWeight: '900', 
+    color: COLORS.textDark 
+  },
+  statsMainIcon: { 
+    width: 56, 
+    height: 56, 
+    borderRadius: 16, 
+    backgroundColor: '#DCFCE7', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    elevation: 3
+  },
+  statsMainDivider: { 
+    height: 1, 
+    backgroundColor: 'rgba(0,0,0,0.06)', 
+    marginVertical: 15 
+  },
+  statsMainRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between' 
+  },
+  statsMainItem: { 
+    flex: 1, 
+    paddingHorizontal: 10 
+  },
+  statsMainItemLabel: { 
+    fontSize: 12, 
+    color: '#6B7280', 
+    fontWeight: '600',
+    marginBottom: 6
+  },
+  statsMainItemValue: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  statsMainItemNumber: { 
+    fontSize: 18, 
+    fontWeight: '900' 
+  },
+
+  // Bar Chart
+  barChartContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'flex-end', 
+    justifyContent: 'space-around',
+    height: 200,
+    paddingHorizontal: 8
+  },
+  barChartItem: { 
+    alignItems: 'center', 
+    flex: 1,
+    marginHorizontal: 4
+  },
+  barChartBar: { 
+    width: '100%', 
+    height: 150, 
+    backgroundColor: '#ECFDF5', 
+    borderRadius: 12,
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+    marginBottom: 8
+  },
+  barFill: { 
+    width: '100%', 
+    borderRadius: 8 
+  },
+  barChartLabel: { 
+    fontSize: 12, 
+    fontWeight: '700', 
+    color: COLORS.textDark,
+    marginBottom: 4
+  },
+  barChartValue: { 
+    fontSize: 13, 
+    fontWeight: '900', 
+    color: COLORS.primary 
+  },
+  statsChartTitle: { 
+    fontSize: 16, 
+    fontWeight: '800', 
+    color: COLORS.textDark 
+  },
+  statsChartSubtitle: { 
+    fontSize: 12, 
+    color: '#6B7280',
+    fontWeight: '500',
+    marginTop: 4
+  },
+
+  // Metrics
+  metricItem: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 16 
+  },
+  metricIconBg: { 
+    width: 48, 
+    height: 48, 
+    borderRadius: 12, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    marginRight: 12
+  },
+  metricContent: { 
+    flex: 1 
+  },
+  metricLabel: { 
+    fontSize: 12, 
+    color: '#6B7280', 
+    fontWeight: '600',
+    marginBottom: 4
+  },
+  metricValue: { 
+    fontSize: 18, 
+    fontWeight: '900', 
+    color: COLORS.textDark 
+  },
+  metricTrend: { 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  metricDivider: { 
+    height: 1, 
+    backgroundColor: '#F3F4F6' 
+  },
+  trendBadge: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingHorizontal: 8, 
+    paddingVertical: 4, 
+    borderRadius: 10 
+  },
+  trendText: { 
+    fontSize: 11, 
+    fontWeight: '700' 
+  },
+
+  // Activities
+  activityItem: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 16 
+  },
+  activityIconBg: { 
+    width: 44, 
+    height: 44, 
+    borderRadius: 12, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    marginRight: 12
+  },
+  activityContent: { 
+    flex: 1 
+  },
+  activityTitle: { 
+    fontSize: 14, 
+    fontWeight: '700', 
+    color: COLORS.textDark,
+    marginBottom: 4
+  },
+  activityTime: { 
+    fontSize: 12, 
+    color: '#9CA3AF', 
+    fontWeight: '500' 
+  },
+  activityPoints: { 
+    fontSize: 14, 
+    fontWeight: '900', 
+    color: COLORS.primary 
+  },
+  activityDivider: { 
+    height: 1, 
+    backgroundColor: '#F3F4F6' 
+  },
 });
