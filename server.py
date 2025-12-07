@@ -1,14 +1,44 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
 from flask_cors import CORS
+from functools import wraps
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 app = Flask(__name__)
 CORS(app)
+app.secret_key = "greenmate_secret_key_2025"
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 USER_FILE = "users.json"
 LOG_FILE = "logs.txt"
+
+# =============================
+# DECORATOR - Check Login
+# =============================
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_email' not in session:
+            return redirect(url_for('home_page'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# =============================
+# HTML ROUTES
+# =============================
+@app.route('/')
+def home_page():
+    # Nếu đã đăng nhập rồi, chuyển sang home
+    if 'user_email' in session:
+        return redirect(url_for('login_page'))
+    return render_template('login.html')
+
+@app.route('/home')
+@login_required
+def login_page():
+    return render_template('index.html')
 
 
 # =============================
@@ -66,10 +96,15 @@ def login():
             write_log(f"LOGIN FAILED: Wrong password - {email}")
             return jsonify({'success': False, 'message': 'Mật khẩu không chính xác'}), 401
 
-        # Thành công
+        # Thành công - Lưu session
+        session.permanent = True
+        session['user_email'] = email
+        session['user_name'] = users_db[email]['name']
+        session['user_points'] = users_db[email]['points']
+        
         user_data = users_db[email]
         write_log(f"LOGIN SUCCESS: {email}")
-        return jsonify({'success': True, 'user': user_data}), 200
+        return jsonify({'success': True, 'user': user_data, 'redirect': '/home'}), 200
 
     except Exception as e:
         write_log(f"LOGIN ERROR: {str(e)}")
@@ -125,6 +160,39 @@ def signup():
     except Exception as e:
         write_log(f"SIGNUP ERROR: {str(e)}")
         return jsonify({'success': False, 'message': f'Lỗi server: {str(e)}'}), 500
+
+
+# =============================
+# LOGOUT
+# =============================
+@app.route('/api/auth/logout', methods=['POST'])
+def logout():
+    try:
+        email = session.get('user_email', 'Unknown')
+        session.clear()
+        write_log(f"LOGOUT SUCCESS: {email}")
+        return jsonify({'success': True, 'message': 'Đăng xuất thành công', 'redirect': '/'}), 200
+    except Exception as e:
+        write_log(f"LOGOUT ERROR: {str(e)}")
+        return jsonify({'success': False, 'message': 'Lỗi đăng xuất'}), 500
+
+
+# =============================
+# GET USER INFO (Check Session)
+# =============================
+@app.route('/api/auth/user', methods=['GET'])
+def get_user():
+    if 'user_email' not in session:
+        return jsonify({'success': False, 'message': 'Chưa đăng nhập'}), 401
+    
+    user_email = session.get('user_email')
+    users_db = load_users()
+    
+    if user_email in users_db:
+        user_data = users_db[user_email]
+        return jsonify({'success': True, 'user': user_data}), 200
+    
+    return jsonify({'success': False, 'message': 'User không tìm thấy'}), 404
 
 
 # =============================

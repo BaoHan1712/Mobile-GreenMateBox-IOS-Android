@@ -4,7 +4,7 @@
         "email": "hanquocbao1712@gmail.com",
         "password": "123456",
         "name": "H\u00e0n Qu\u1ed1c B\u1ea3o",
-        "points": 1280,
+        "points": 5250,
         "level": "Eco Warrior - Level 10"
     },
     "hanquocbao17123@gmail.com": {
@@ -22,5 +22,13 @@
         "name": "GreenMate User",
         "points": 1280,
         "level": "Eco Warrior - Level 10"
+    },
+    "phuoc@gmail.com": {
+        "id": 4,
+        "email": "phuoc@gmail.com",
+        "password": "123123",
+        "name": "phuoc",
+        "points": 500,
+        "level": "T\u00e2n binh - Level 1"
     }
 }

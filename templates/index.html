@@ -1,0 +1,1064 @@
+<!doctype html>
+<html lang="vi">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GreenMate - Smart Recycling Platform</title>
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.8;
+      }
+    }
+    
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    
+    .fade-in-up {
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+    
+    .slide-in-right {
+      animation: slideInRight 0.5s ease-out forwards;
+    }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 8px 32px rgba(16, 185, 129, 0.15), 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .eco-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(209, 250, 229, 0.95) 100%);
+      backdrop-filter: blur(12px);
+      border: 2px solid rgba(52, 211, 153, 0.3);
+      box-shadow: 0 10px 40px rgba(16, 185, 129, 0.2);
+    }
+    
+    .gradient-bg {
+      background: linear-gradient(180deg, #10B981 0%, #34D399 30%, #6EE7B7 60%, #D1FAE5 100%);
+    }
+    
+    .leaf-pattern {
+      background-image: 
+        radial-gradient(circle at 20% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(52, 211, 153, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(110, 231, 183, 0.05) 0%, transparent 50%);
+    }
+    
+    .stat-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(52, 211, 153, 0.3);
+    }
+    
+    .tab-button {
+      transition: all 0.3s ease;
+    }
+    
+    .tab-button.active {
+      background: #34D399;
+      color: white;
+    }
+    
+    .loading-spinner {
+      border: 3px solid rgba(52, 211, 153, 0.3);
+      border-top: 3px solid #34D399;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    
+    .eco-icon {
+      filter: drop-shadow(0 2px 4px rgba(52, 211, 153, 0.3));
+    }
+    
+    .badge-glow {
+      box-shadow: 0 0 25px rgba(52, 211, 153, 0.6), 0 0 50px rgba(16, 185, 129, 0.3);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+    
+    .float-animation {
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    .shimmer {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .shimmer::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+      100% {
+        left: 100%;
+      }
+    }
+    
+    .map-marker {
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    
+    .map-marker:hover {
+      transform: scale(1.2);
+    }
+    
+    .chart-bar {
+      transition: height 0.5s ease;
+    }
+    
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 16px 24px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      animation: slideInRight 0.3s ease-out;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+ </head>
+ <body class="gradient-bg min-h-full">
+  <div id="app" class="w-full min-h-full pb-20"></div>
+  <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 glass-card border-t">
+   <div class="flex justify-around items-center h-16 px-4"><button class="nav-btn flex flex-col items-center gap-1 flex-1" data-page="dashboard">
+     <svg class="w-6 h-6 eco-icon" fill="currentColor" viewbox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+     </svg><span class="text-xs font-medium">Trang chủ</span> </button> <button class="nav-btn flex flex-col items-center gap-1 flex-1" data-page="wallet">
+     <svg class="w-6 h-6 eco-icon" fill="currentColor" viewbox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" /> <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" />
+     </svg><span class="text-xs font-medium">Ví điểm</span> </button> <button class="nav-btn flex flex-col items-center gap-1 flex-1" data-page="stats">
+     <svg class="w-6 h-6 eco-icon" fill="currentColor" viewbox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+     </svg><span class="text-xs font-medium">Thống kê</span> </button> <button class="nav-btn flex flex-col items-center gap-1 flex-1" data-page="history">
+     <svg class="w-6 h-6 eco-icon" fill="currentColor" viewbox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+     </svg><span class="text-xs font-medium">Lịch sử</span> </button> <button class="nav-btn flex flex-col items-center gap-1 flex-1" data-page="map">
+     <svg class="w-6 h-6 eco-icon" fill="currentColor" viewbox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+     </svg><span class="text-xs font-medium">Bản đồ</span> </button>
+   </div>
+  </nav>
+  <script>
+    const defaultConfig = {
+      app_title: "GreenMate",
+      tagline: "Smart Recycling Platform",
+      welcome_text: "Chào mừng trở lại",
+      wallet_title: "Ví Điểm Của Bạn",
+      rewards_title: "Đổi Điểm Lấy Quà",
+      background_color: "#34D399",
+      surface_color: "#FFFFFF",
+      text_color: "#1F2937",
+      primary_action_color: "#34D399",
+      secondary_action_color: "#10B981",
+      font_family: "system-ui",
+      font_size: 16
+    };
+
+    let appState = {
+      currentPage: 'dashboard',
+      userPoints: 0,
+      totalBottles: 0,
+      co2Saved: 0,
+      usedPoints: 0,
+      transactions: [],
+      userData: {
+        name: "",
+        email: "",
+        avatar: "🌱",
+        totalTrees: 0,
+        level: ""
+      }
+    };
+
+    const dataHandler = {
+      onDataChanged(data) {
+        appState.transactions = data.sort((a, b) => 
+          new Date(b.timestamp) - new Date(a.timestamp)
+        );
+        
+        if (appState.currentPage === 'history') {
+          renderHistoryPage();
+        } else if (appState.currentPage === 'stats') {
+          renderStatsPage();
+        } else if (appState.currentPage === 'dashboard') {
+          renderDashboard();
+        }
+      }
+    };
+
+    async function initApp() {
+      // Kiểm tra session - nếu chưa đăng nhập thì về login
+      try {
+        const userRes = await fetch('/api/auth/user');
+        if (!userRes.ok) {
+          window.location.href = '/';
+          return;
+        }
+        
+        // Lấy data user từ backend
+        const userData = await userRes.json();
+        if (userData.success && userData.user) {
+          appState.userData.name = userData.user.name;
+          appState.userData.email = userData.user.email;
+          appState.userData.level = userData.user.level;
+          appState.userPoints = userData.user.points;
+        }
+      } catch (err) {
+        console.error('Session check failed:', err);
+        window.location.href = '/';
+        return;
+      }
+
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange: async (config) => {
+            const customFont = config.font_family || defaultConfig.font_family;
+            const baseSize = config.font_size || defaultConfig.font_size;
+            const baseFontStack = 'system-ui, -apple-system, sans-serif';
+            
+            document.body.style.fontFamily = `${customFont}, ${baseFontStack}`;
+            document.body.style.fontSize = `${baseSize}px`;
+            
+            const titles = document.querySelectorAll('.page-title');
+            titles.forEach(el => el.style.fontSize = `${baseSize * 1.75}px`);
+            
+            const subtitles = document.querySelectorAll('.subtitle');
+            subtitles.forEach(el => el.style.fontSize = `${baseSize * 1.25}px`);
+            
+            const labels = document.querySelectorAll('.label-text');
+            labels.forEach(el => el.style.fontSize = `${baseSize * 0.875}px`);
+            
+            const bgColor = config.background_color || defaultConfig.background_color;
+            const surfaceColor = config.surface_color || defaultConfig.surface_color;
+            const textColor = config.text_color || defaultConfig.text_color;
+            const primaryColor = config.primary_action_color || defaultConfig.primary_action_color;
+            const secondaryColor = config.secondary_action_color || defaultConfig.secondary_action_color;
+            
+            document.body.style.background = `linear-gradient(135deg, ${bgColor} 0%, ${surfaceColor} 100%)`;
+            
+            const cards = document.querySelectorAll('.glass-card');
+            cards.forEach(card => {
+              card.style.background = `rgba(255, 255, 255, 0.7)`;
+              card.style.color = textColor;
+            });
+            
+            const primaryBtns = document.querySelectorAll('.btn-primary');
+            primaryBtns.forEach(btn => {
+              btn.style.background = primaryColor;
+              btn.style.color = surfaceColor;
+            });
+            
+            const secondaryBtns = document.querySelectorAll('.btn-secondary');
+            secondaryBtns.forEach(btn => {
+              btn.style.background = secondaryColor;
+              btn.style.color = surfaceColor;
+            });
+            
+            const navBtns = document.querySelectorAll('.nav-btn');
+            navBtns.forEach(btn => {
+              btn.style.color = textColor;
+              if (btn.classList.contains('active')) {
+                btn.style.color = primaryColor;
+              }
+            });
+            
+            const titleEl = document.querySelector('.app-title');
+            if (titleEl) titleEl.textContent = config.app_title || defaultConfig.app_title;
+            
+            const taglineEl = document.querySelector('.app-tagline');
+            if (taglineEl) taglineEl.textContent = config.tagline || defaultConfig.tagline;
+            
+            const welcomeEl = document.querySelector('.welcome-text');
+            if (welcomeEl) welcomeEl.textContent = config.welcome_text || defaultConfig.welcome_text;
+            
+            const walletTitleEl = document.querySelector('.wallet-title');
+            if (walletTitleEl) walletTitleEl.textContent = config.wallet_title || defaultConfig.wallet_title;
+            
+            const rewardsTitleEl = document.querySelector('.rewards-title');
+            if (rewardsTitleEl) rewardsTitleEl.textContent = config.rewards_title || defaultConfig.rewards_title;
+          },
+          mapToCapabilities: (config) => ({
+            recolorables: [
+              {
+                get: () => config.background_color || defaultConfig.background_color,
+                set: (value) => {
+                  config.background_color = value;
+                  window.elementSdk.setConfig({ background_color: value });
+                }
+              },
+              {
+                get: () => config.surface_color || defaultConfig.surface_color,
+                set: (value) => {
+                  config.surface_color = value;
+                  window.elementSdk.setConfig({ surface_color: value });
+                }
+              },
+              {
+                get: () => config.text_color || defaultConfig.text_color,
+                set: (value) => {
+                  config.text_color = value;
+                  window.elementSdk.setConfig({ text_color: value });
+                }
+              },
+              {
+                get: () => config.primary_action_color || defaultConfig.primary_action_color,
+                set: (value) => {
+                  config.primary_action_color = value;
+                  window.elementSdk.setConfig({ primary_action_color: value });
+                }
+              },
+              {
+                get: () => config.secondary_action_color || defaultConfig.secondary_action_color,
+                set: (value) => {
+                  config.secondary_action_color = value;
+                  window.elementSdk.setConfig({ secondary_action_color: value });
+                }
+              }
+            ],
+            borderables: [],
+            fontEditable: {
+              get: () => config.font_family || defaultConfig.font_family,
+              set: (value) => {
+                config.font_family = value;
+                window.elementSdk.setConfig({ font_family: value });
+              }
+            },
+            fontSizeable: {
+              get: () => config.font_size || defaultConfig.font_size,
+              set: (value) => {
+                config.font_size = value;
+                window.elementSdk.setConfig({ font_size: value });
+              }
+            }
+          }),
+          mapToEditPanelValues: (config) => new Map([
+            ["app_title", config.app_title || defaultConfig.app_title],
+            ["tagline", config.tagline || defaultConfig.tagline],
+            ["welcome_text", config.welcome_text || defaultConfig.welcome_text],
+            ["wallet_title", config.wallet_title || defaultConfig.wallet_title],
+            ["rewards_title", config.rewards_title || defaultConfig.rewards_title]
+          ])
+        });
+      }
+
+      if (window.dataSdk) {
+        const initResult = await window.dataSdk.init(dataHandler);
+        if (!initResult.isOk) {
+          console.error("Failed to initialize data SDK");
+        }
+      }
+
+      setupNavigation();
+      renderDashboard();
+    }
+
+    function setupNavigation() {
+      const navButtons = document.querySelectorAll('.nav-btn');
+      navButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const page = btn.dataset.page;
+          navigateTo(page);
+        });
+      });
+    }
+
+    function navigateTo(page) {
+      appState.currentPage = page;
+      
+      const navButtons = document.querySelectorAll('.nav-btn');
+      navButtons.forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.color = '';
+      });
+      
+      const activeBtn = document.querySelector(`[data-page="${page}"]`);
+      if (activeBtn) {
+        activeBtn.classList.add('active');
+      }
+      
+      switch(page) {
+        case 'dashboard':
+          renderDashboard();
+          break;
+        case 'wallet':
+          renderWalletPage();
+          break;
+        case 'stats':
+          renderStatsPage();
+          break;
+        case 'history':
+          renderHistoryPage();
+          break;
+        case 'map':
+          renderMapPage();
+          break;
+        case 'profile':
+          renderProfilePage();
+          break;
+      }
+    }
+
+    function renderDashboard() {
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="w-full p-6 leaf-pattern">
+          <div class="flex items-center justify-between mb-6 fade-in-up">
+            <div>
+              <h1 class="page-title text-3xl font-bold text-white mb-1 app-title" style="text-shadow: 0 2px 10px rgba(0,0,0,0.2)">${defaultConfig.app_title}</h1>
+              <p class="label-text text-emerald-50 app-tagline">${defaultConfig.tagline}</p>
+            </div>
+            <button class="w-14 h-14 rounded-full bg-white shadow-xl flex items-center justify-center text-3xl float-animation" onclick="navigateTo('profile')">
+              ${appState.userData.avatar}
+            </button>
+          </div>
+
+          <div class="eco-card rounded-3xl p-6 mb-6 fade-in-up shimmer" style="animation-delay: 0.1s">
+            <p class="label-text text-emerald-700 mb-2 welcome-text">${defaultConfig.welcome_text}</p>
+            <h2 class="subtitle text-2xl font-bold text-gray-800 mb-1">${appState.userData.name}</h2>
+            <p class="label-text text-emerald-600 mb-4 font-semibold">${appState.userData.level}</p>
+            
+            <div class="grid grid-cols-3 gap-4">
+              <div class="text-center">
+                <div class="text-3xl font-bold text-green-600">${appState.userPoints}</div>
+                <div class="label-text text-emerald-700 mt-1 font-semibold">💰 Điểm</div>
+              </div>
+              <div class="text-center">
+                <div class="text-3xl font-bold text-emerald-600">${appState.totalBottles}</div>
+                <div class="label-text text-emerald-700 mt-1 font-semibold">♻️ Chai</div>
+              </div>
+              <div class="text-center">
+                <div class="text-3xl font-bold text-teal-600">${appState.co2Saved.toFixed(1)}kg</div>
+                <div class="label-text text-emerald-700 mt-1 font-semibold">🌍 CO₂</div>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="subtitle font-bold text-white mb-4 fade-in-up" style="animation-delay: 0.2s; text-shadow: 0 2px 8px rgba(0,0,0,0.2)">🎯 Huy Hiệu Thành Tích</h3>
+          
+          <div class="grid grid-cols-3 gap-3 mb-6">
+            <div class="glass-card stat-card rounded-2xl p-3 text-center fade-in-up" style="animation-delay: 0.25s">
+              <div class="text-3xl mb-1">🌱</div>
+              <div class="label-text text-gray-700 font-bold text-xs">Eco Starter</div>
+              <div class="label-text text-emerald-600 text-xs mt-1 font-semibold">${appState.totalBottles >= 10 ? '✓' : ''}</div>
+            </div>
+            
+            <div class="eco-card stat-card rounded-2xl p-3 text-center badge-glow fade-in-up" style="animation-delay: 0.3s">
+              <div class="text-4xl mb-1">⚡</div>
+              <div class="label-text text-gray-800 font-bold text-xs">Green Warrior</div>
+              <div class="label-text text-green-600 text-xs mt-1 font-bold">${appState.totalBottles >= 100 ? '✓' : ''}</div>
+            </div>
+            
+            <div class="glass-card stat-card rounded-2xl p-3 text-center ${appState.totalBottles >= 500 ? '' : 'opacity-60'} fade-in-up" style="animation-delay: 0.35s">
+              <div class="text-3xl mb-1">🏆</div>
+              <div class="label-text text-gray-700 font-bold text-xs">Zero-Waste</div>
+              <div class="label-text text-gray-500 text-xs mt-1">${appState.totalBottles >= 500 ? '✓' : ''}</div>
+            </div>
+
+            <div class="glass-card stat-card rounded-2xl p-3 text-center ${appState.co2Saved >= 10 ? '' : 'opacity-60'} fade-in-up" style="animation-delay: 0.4s">
+              <div class="text-3xl mb-1">🌍</div>
+              <div class="label-text text-gray-700 font-bold text-xs">Earth Guard</div>
+              <div class="label-text text-blue-600 text-xs mt-1 font-bold">${appState.co2Saved >= 10 ? '✓' : ''}</div>
+            </div>
+
+            <div class="glass-card stat-card rounded-2xl p-3 text-center ${appState.userPoints >= 500 ? '' : 'opacity-60'} fade-in-up" style="animation-delay: 0.45s">
+              <div class="text-3xl mb-1">💎</div>
+              <div class="label-text text-gray-700 font-bold text-xs">Point Master</div>
+              <div class="label-text text-purple-600 text-xs mt-1 font-bold">${appState.userPoints >= 500 ? '✓' : ''}</div>
+            </div>
+
+            <div class="glass-card stat-card rounded-2xl p-3 text-center ${appState.totalBottles >= 50 ? '' : 'opacity-60'} fade-in-up" style="animation-delay: 0.5s">
+              <div class="text-3xl mb-1">🎖️</div>
+              <div class="label-text text-gray-700 font-bold text-xs">Recycle Pro</div>
+              <div class="label-text text-orange-600 text-xs mt-1 font-bold">${appState.totalBottles >= 50 ? '✓' : ''}</div>
+            </div>
+
+            <div class="glass-card stat-card rounded-2xl p-3 text-center ${appState.userPoints >= 1000 ? '' : 'opacity-60'} fade-in-up" style="animation-delay: 0.55s">
+              <div class="text-3xl mb-1">👑</div>
+              <div class="label-text text-gray-700 font-bold text-xs">Eco King</div>
+              <div class="label-text text-yellow-600 text-xs mt-1 font-bold">${appState.userPoints >= 1000 ? '✓' : ''}</div>
+            </div>
+
+            <div class="glass-card stat-card rounded-2xl p-3 text-center ${appState.co2Saved >= 50 ? '' : 'opacity-60'} fade-in-up" style="animation-delay: 0.6s">
+              <div class="text-3xl mb-1">🌳</div>
+              <div class="label-text text-gray-700 font-bold text-xs">Tree Lover</div>
+              <div class="label-text text-green-600 text-xs mt-1 font-bold">${appState.co2Saved >= 50 ? '✓' : ''}</div>
+            </div>
+
+            <div class="glass-card stat-card rounded-2xl p-3 text-center ${appState.totalBottles >= 200 ? '' : 'opacity-60'} fade-in-up" style="animation-delay: 0.65s">
+              <div class="text-3xl mb-1">🚀</div>
+              <div class="label-text text-gray-700 font-bold text-xs">Super Saver</div>
+              <div class="label-text text-red-600 text-xs mt-1 font-bold">${appState.totalBottles >= 200 ? '✓' : ''}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderWalletPage() {
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="w-full p-6">
+          <h1 class="page-title text-3xl font-bold text-gray-800 mb-6 fade-in-up wallet-title">${defaultConfig.wallet_title}</h1>
+
+          <div class="glass-card rounded-3xl p-6 mb-6 fade-in-up" style="animation-delay: 0.1s">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <p class="label-text text-gray-600 mb-1">Điểm khả dụng</p>
+                <h2 class="text-4xl font-bold text-green-600">${appState.userPoints}</h2>
+              </div>
+              <div class="text-5xl">💰</div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-200">
+              <div>
+                <p class="label-text text-gray-600">Đã sử dụng</p>
+                <p class="text-xl font-bold text-gray-700">${appState.usedPoints}</p>
+              </div>
+              <div>
+                <p class="label-text text-gray-600">Tổng cộng</p>
+                <p class="text-xl font-bold text-gray-700">${appState.userPoints + appState.usedPoints}</p>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="subtitle font-bold text-gray-800 mb-4 fade-in-up rewards-title" style="animation-delay: 0.2s">${defaultConfig.rewards_title}</h3>
+          
+          <div class="space-y-4">
+            <div class="glass-card stat-card rounded-2xl p-4 flex items-center gap-4 fade-in-up" style="animation-delay: 0.3s">
+              <div class="text-4xl">🛒</div>
+              <div class="flex-1">
+                <h4 class="font-bold text-gray-800">Voucher Co.op Mart</h4>
+                <p class="label-text text-gray-600">Giảm 50.000đ</p>
+              </div>
+              <button class="btn-primary bg-green-500 text-white px-6 py-2 rounded-xl font-bold" onclick="redeemReward('voucher', 500)">500 điểm</button>
+            </div>
+
+            <div class="glass-card stat-card rounded-2xl p-4 flex items-center gap-4 fade-in-up" style="animation-delay: 0.4s">
+              <div class="text-4xl">🎓</div>
+              <div class="flex-1">
+                <h4 class="font-bold text-gray-800">Giảm Học Phí</h4>
+                <p class="label-text text-gray-600">Giảm 100.000đ</p>
+              </div>
+              <button class="btn-primary bg-green-500 text-white px-6 py-2 rounded-xl font-bold" onclick="redeemReward('tuition', 1000)">1000 điểm</button>
+            </div>
+
+            <div class="glass-card stat-card rounded-2xl p-4 flex items-center gap-4 fade-in-up" style="animation-delay: 0.5s">
+              <div class="text-4xl">🍶</div>
+              <div class="flex-1">
+                <h4 class="font-bold text-gray-800">Bình Nước Eco</h4>
+                <p class="label-text text-gray-600">Bình inox 500ml</p>
+              </div>
+              <button class="btn-primary bg-green-500 text-white px-6 py-2 rounded-xl font-bold" onclick="redeemReward('bottle', 800)">800 điểm</button>
+            </div>
+
+            <div class="glass-card stat-card rounded-2xl p-4 flex items-center gap-4 fade-in-up" style="animation-delay: 0.6s">
+              <div class="text-4xl">👕</div>
+              <div class="flex-1">
+                <h4 class="font-bold text-gray-800">Áo Thun Eco Pack</h4>
+                <p class="label-text text-gray-600">100% sợi tái chế</p>
+              </div>
+              <button class="btn-primary bg-green-500 text-white px-6 py-2 rounded-xl font-bold" onclick="redeemReward('tshirt', 1200)">1200 điểm</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStatsPage() {
+      const dailyData = calculateDailyStats();
+      const monthlyData = calculateMonthlyStats();
+      const leaderboard = generateLeaderboard();
+      
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="w-full p-6">
+          <h1 class="page-title text-3xl font-bold text-gray-800 mb-6 fade-in-up">📊 Thống Kê Cá Nhân</h1>
+
+          <div class="glass-card rounded-2xl p-6 mb-6 fade-in-up" style="animation-delay: 0.1s">
+            <h3 class="subtitle font-bold text-gray-800 mb-4">📈 Số Chai/Lon Mỗi Ngày</h3>
+            <div class="flex items-end justify-between h-48 gap-2">
+              ${dailyData.map((count, index) => `
+                <div class="flex-1 flex flex-col items-center gap-2">
+                  <div class="chart-bar w-full bg-gradient-to-t from-green-500 to-emerald-400 rounded-t-lg" style="height: ${(count / Math.max(...dailyData)) * 100}%"></div>
+                  <span class="label-text text-xs text-gray-600">${['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][index]}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="glass-card rounded-2xl p-6 mb-6 fade-in-up" style="animation-delay: 0.2s">
+            <h3 class="subtitle font-bold text-gray-800 mb-4">🌍 CO₂ Tiết Kiệm (kg)</h3>
+            <div class="relative h-48">
+              <svg class="w-full h-full" viewBox="0 0 300 150">
+                <polyline
+                  fill="none"
+                  stroke="#34D399"
+                  stroke-width="3"
+                  points="${monthlyData.map((val, i) => `${i * 50},${150 - (val / Math.max(...monthlyData)) * 120}`).join(' ')}"
+                />
+                ${monthlyData.map((val, i) => `
+                  <circle cx="${i * 50}" cy="${150 - (val / Math.max(...monthlyData)) * 120}" r="4" fill="#10B981"/>
+                `).join('')}
+              </svg>
+            </div>
+            <div class="flex justify-between mt-4">
+              ${['T1', 'T2', 'T3', 'T4', 'T5', 'T6'].map(month => `
+                <span class="label-text text-xs text-gray-600">${month}</span>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="glass-card rounded-2xl p-6 mb-6 fade-in-up" style="animation-delay: 0.3s">
+            <h3 class="subtitle font-bold text-gray-800 mb-4">🏅 Bảng Xếp Hạng</h3>
+            <div class="space-y-3">
+              ${leaderboard.map((user, index) => `
+                <div class="flex items-center gap-3 ${index === 0 ? 'bg-yellow-50' : ''} p-3 rounded-xl">
+                  <div class="text-2xl font-bold ${index === 0 ? 'text-yellow-500' : index === 1 ? 'text-gray-400' : index === 2 ? 'text-orange-600' : 'text-gray-600'}">
+                    ${index + 1}
+                  </div>
+                  <div class="text-2xl">${user.avatar}</div>
+                  <div class="flex-1">
+                    <div class="font-bold text-gray-800">${user.name}</div>
+                    <div class="label-text text-gray-600">${user.bottles} chai</div>
+                  </div>
+                  <div class="text-xl">${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : ''}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderHistoryPage() {
+      const app = document.getElementById('app');
+      
+      if (appState.transactions.length === 0) {
+        app.innerHTML = `
+          <div class="w-full p-6">
+            <h1 class="page-title text-3xl font-bold text-gray-800 mb-6 fade-in-up">📜 Lịch Sử Đổi Chai</h1>
+            <div class="glass-card rounded-2xl p-12 text-center fade-in-up">
+              <div class="text-6xl mb-4">🌱</div>
+              <p class="subtitle text-gray-600">Chưa có giao dịch nào</p>
+              <p class="label-text text-gray-500 mt-2">Bắt đầu tái chế để xem lịch sử tại đây</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+      
+      app.innerHTML = `
+        <div class="w-full p-6">
+          <h1 class="page-title text-3xl font-bold text-gray-800 mb-6 fade-in-up">📜 Lịch Sử Đổi Chai</h1>
+          
+          <div class="space-y-4">
+            ${appState.transactions.map((tx, index) => {
+              const date = new Date(tx.timestamp);
+              const icon = tx.category === 'plastic' ? '🍶' : tx.category === 'glass' ? '🍾' : '��';
+              
+              return `
+                <div class="glass-card stat-card rounded-2xl p-4 fade-in-up" style="animation-delay: ${index * 0.05}s">
+                  <div class="flex items-start gap-4">
+                    <div class="text-4xl">${icon}</div>
+                    <div class="flex-1">
+                      <div class="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 class="font-bold text-gray-800">${tx.type}</h4>
+                          <p class="label-text text-gray-600">${tx.quantity} ${tx.category === 'plastic' ? 'chai' : tx.category === 'glass' ? 'lọ' : 'lon'}</p>
+                        </div>
+                        <div class="text-right">
+                          <div class="text-xl font-bold text-green-600">+${tx.points}</div>
+                          <div class="label-text text-gray-600">điểm</div>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-2 label-text text-gray-500">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                        </svg>
+                        <span>${tx.location}</span>
+                      </div>
+                      <div class="label-text text-gray-500 mt-1">
+                        ${date.toLocaleDateString('vi-VN')} ${date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                      <div class="label-text text-green-600 mt-1">🌱 CO₂ tiết kiệm: ${tx.co2_saved}kg</div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMapPage() {
+      const machines = generateMachines();
+      
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="w-full p-6">
+          <h1 class="page-title text-3xl font-bold text-gray-800 mb-6 fade-in-up">🗺️ Máy Gần Bạn</h1>
+
+          <div class="glass-card rounded-2xl p-6 mb-6 fade-in-up" style="animation-delay: 0.1s">
+            <div class="bg-gradient-to-br from-green-100 to-emerald-50 rounded-xl h-64 relative overflow-hidden">
+              ${machines.map((machine, index) => `
+                <button 
+                  class="map-marker absolute" 
+                  style="left: ${machine.x}%; top: ${machine.y}%"
+                  onclick="showMachineInfo(${index})"
+                >
+                  <svg class="w-10 h-10" fill="${machine.status === 'active' ? '#10B981' : machine.status === 'almost-full' ? '#F59E0B' : '#EF4444'}" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                  </svg>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="flex gap-4 mb-6 label-text fade-in-up" style="animation-delay: 0.2s">
+            <div class="flex items-center gap-2">
+              <div class="w-4 h-4 rounded-full bg-green-500"></div>
+              <span>Hoạt động</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-4 h-4 rounded-full bg-yellow-500"></div>
+              <span>Sắp đầy</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-4 h-4 rounded-full bg-red-500"></div>
+              <span>Bảo trì</span>
+            </div>
+          </div>
+
+          <div id="machine-list" class="space-y-4">
+            ${machines.map((machine, index) => `
+              <div class="glass-card stat-card rounded-2xl p-4 fade-in-up" style="animation-delay: ${0.3 + index * 0.05}s">
+                <div class="flex items-center gap-4">
+                  <div class="w-3 h-3 rounded-full ${machine.status === 'active' ? 'bg-green-500' : machine.status === 'almost-full' ? 'bg-yellow-500' : 'bg-red-500'}"></div>
+                  <div class="flex-1">
+                    <h4 class="font-bold text-gray-800">${machine.name}</h4>
+                    <p class="label-text text-gray-600">${machine.address}</p>
+                    <p class="label-text text-gray-500 mt-1">${machine.distance}</p>
+                  </div>
+                  <div class="text-right">
+                    <div class="label-text text-gray-600">Sức chứa</div>
+                    <div class="font-bold ${machine.capacity > 70 ? 'text-green-600' : machine.capacity > 30 ? 'text-yellow-600' : 'text-red-600'}">${machine.capacity}%</div>
+                  </div>
+                </div>
+                <div class="flex gap-2 mt-3 label-text text-gray-600">
+                  ${machine.types.map(type => `<span class="px-3 py-1 bg-green-100 text-green-700 rounded-full">${type}</span>`).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderProfilePage() {
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="w-full p-6">
+          <h1 class="page-title text-3xl font-bold text-gray-800 mb-6 fade-in-up">👤 Hồ Sơ Cá Nhân</h1>
+
+          <div class="glass-card rounded-3xl p-6 text-center mb-6 fade-in-up" style="animation-delay: 0.1s">
+            <div class="text-7xl mb-4">${appState.userData.avatar}</div>
+            <h2 class="subtitle text-2xl font-bold text-gray-800 mb-2">${appState.userData.name}</h2>
+            <p class="label-text text-gray-600 mb-4">${appState.userData.email}</p>
+            
+            <div class="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-200">
+              <div>
+                <div class="text-3xl font-bold text-green-600">${appState.userData.totalTrees}</div>
+                <div class="label-text text-gray-600 mt-1">🌳 Cây xanh</div>
+              </div>
+              <div>
+                <div class="text-3xl font-bold text-blue-600">${appState.totalBottles}</div>
+                <div class="label-text text-gray-600 mt-1">♻️ Chai tái chế</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card rounded-2xl p-6 mb-6 fade-in-up" style="animation-delay: 0.2s">
+            <h3 class="subtitle font-bold text-gray-800 mb-4">🌍 Đóng Góp Môi Trường</h3>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="label-text text-gray-600">CO₂ tiết kiệm</span>
+                <span class="font-bold text-green-600">${appState.co2Saved} kg</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="label-text text-gray-600">Tương đương trồng</span>
+                <span class="font-bold text-emerald-600">${appState.userData.totalTrees} cây xanh</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="label-text text-gray-600">Sợi polyester từ tái chế</span>
+                <span class="font-bold text-blue-600">${(appState.totalBottles * 0.5).toFixed(1)} kg</span>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-secondary w-full bg-red-500 text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-red-600 transition fade-in-up" style="animation-delay: 0.3s" onclick="logout()">
+            🚪 Đăng Xuất
+          </button>
+        </div>
+      `;
+    }
+
+    async function quickRecycle(type, emoji) {
+      if (appState.transactions.length >= 999) {
+        showToast('⚠️ Đã đạt giới hạn 999 giao dịch', 'error');
+        return;
+      }
+      
+      const category = type === 'Chai nhựa' ? 'plastic' : type === 'Chai thủy tinh' ? 'glass' : 'aluminum';
+      const pointsPerItem = category === 'plastic' ? 10 : category === 'glass' ? 15 : 20;
+      const quantity = 1;
+      const points = quantity * pointsPerItem;
+      const co2_saved = parseFloat((quantity * 0.3).toFixed(1));
+      
+      const transaction = {
+        id: Date.now().toString(),
+        type,
+        category,
+        quantity,
+        points,
+        co2_saved,
+        location: 'Khu A - Tòa nhà chính',
+        timestamp: new Date().toISOString()
+      };
+      
+      if (window.dataSdk) {
+        const result = await window.dataSdk.create(transaction);
+        
+        if (result.isOk) {
+          appState.userPoints += points;
+          appState.totalBottles += quantity;
+          appState.co2Saved += co2_saved;
+          
+          showToast(`${emoji} +${points} điểm! CO₂ giảm ${co2_saved}kg`, 'success');
+          renderDashboard();
+        } else {
+          showToast('❌ Có lỗi xảy ra. Vui lòng thử lại.', 'error');
+        }
+      }
+    }
+
+    async function redeemReward(type, cost) {
+      if (appState.userPoints < cost) {
+        showToast('❌ Không đủ điểm để đổi quà', 'error');
+        return;
+      }
+      
+      const confirmModal = document.createElement('div');
+      confirmModal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-6';
+      confirmModal.innerHTML = `
+        <div class="glass-card rounded-3xl p-6 w-full max-w-sm slide-in-right text-center">
+          <div class="text-5xl mb-4">🎁</div>
+          <h3 class="subtitle text-xl font-bold text-gray-800 mb-2">Xác nhận đổi quà?</h3>
+          <p class="label-text text-gray-600 mb-6">Sẽ sử dụng ${cost} điểm</p>
+          <div class="flex gap-3">
+            <button class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300 transition" onclick="this.closest('.fixed').remove()">
+              Hủy
+            </button>
+            <button class="btn-primary flex-1 bg-green-500 text-white py-3 rounded-xl font-bold hover:bg-green-600 transition" onclick="confirmRedeem(${cost})">
+              Đồng Ý
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(confirmModal);
+    }
+
+    window.confirmRedeem = function(cost) {
+      appState.userPoints -= cost;
+      appState.usedPoints += cost;
+      
+      const modal = document.querySelector('.fixed');
+      if (modal) modal.remove();
+      
+      showToast('🎉 Đổi quà thành công!', 'success');
+      renderWalletPage();
+    };
+
+    function logout() {
+      const confirmModal = document.createElement('div');
+      confirmModal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-6';
+      confirmModal.innerHTML = `
+        <div class="glass-card rounded-3xl p-6 w-full max-w-sm slide-in-right text-center">
+          <div class="text-5xl mb-4">👋</div>
+          <h3 class="subtitle text-xl font-bold text-gray-800 mb-2">Đăng xuất?</h3>
+          <p class="label-text text-gray-600 mb-6">Bạn có chắc muốn thoát?</p>
+          <div class="flex gap-3">
+            <button class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300 transition" onclick="this.closest('.fixed').remove()">
+              Hủy
+            </button>
+            <button class="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold hover:bg-red-600 transition" onclick="confirmLogout()">
+              Đăng Xuất
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(confirmModal);
+    }
+
+    window.confirmLogout = function() {
+      // Gọi API logout
+      fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast('👋 Tạm biệt! Hẹn gặp lại.', 'success');
+          setTimeout(() => {
+            window.location.href = data.redirect || '/';
+          }, 1500);
+        }
+      })
+      .catch(err => {
+        console.error('Logout error:', err);
+        showToast('Lỗi đăng xuất', 'error');
+      });
+      const modal = document.querySelector('.fixed');
+      if (modal) modal.remove();
+    };
+
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">${type === 'success' ? '✅' : '❌'}</span>
+          <span class="font-semibold">${message}</span>
+        </div>
+      `;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function calculateDailyStats() {
+      const days = [3, 8, 5, 12, 7, 15, 18];
+      return days;
+    }
+
+    function calculateMonthlyStats() {
+      const months = [5.2, 8.7, 12.3, 15.8, 22.4, 38.1];
+      return months;
+    }
+
+    function generateLeaderboard() {
+      return [
+        { name: appState.userData.name, avatar: appState.userData.avatar, bottles: appState.totalBottles },
+        { name: "Trần Thị B", avatar: "🌿", bottles: 98 },
+        { name: "Lê Văn C", avatar: "🌳", bottles: 85 },
+        { name: "Ph���m Thị D", avatar: "🍀", bottles: 72 },
+        { name: "Hoàng Văn E", avatar: "🌾", bottles: 65 },
+        { name: "Ngô Thị F", avatar: "🌻", bottles: 58 },
+        { name: "Vũ Văn G", avatar: "🌺", bottles: 51 },
+        { name: "Đặng Thị H", avatar: "🌼", bottles: 44 },
+        { name: "Bùi Văn I", avatar: "🌷", bottles: 38 },
+        { name: "Dương Thị K", avatar: "🌸", bottles: 32 }
+      ].sort((a, b) => b.bottles - a.bottles);
+    }
+
+    function generateMachines() {
+      return [
+        { name: "Máy #1", address: "Khu A - Tòa nhà chính", distance: "50m", status: "active", capacity: 85, x: 25, y: 30, types: ["Nhựa", "Thủy tinh"] },
+        { name: "Máy #2", address: "Khu B - Ký túc xá", distance: "120m", status: "almost-full", capacity: 25, x: 65, y: 45, types: ["Nhựa", "Nhôm"] },
+        { name: "Máy #3", address: "Khu C - Khu thể thao", distance: "200m", status: "active", capacity: 60, x: 45, y: 65, types: ["Nhựa", "Thủy tinh", "Nhôm"] },
+        { name: "Máy #4", address: "Khu D - Căng tin", distance: "180m", status: "maintenance", capacity: 0, x: 75, y: 25, types: ["Nhựa"] }
+      ];
+    }
+
+    function showMachineInfo(index) {
+      const machines = generateMachines();
+      const machine = machines[index];
+      
+      const statusText = machine.status === 'active' ? 'Đang hoạt động' : 
+                         machine.status === 'almost-full' ? 'Sắp đầy' : 'Đang bảo trì';
+      const statusColor = machine.status === 'active' ? 'text-green-600' : 
+                          machine.status === 'almost-full' ? 'text-yellow-600' : 'text-red-600';
+      
+      showToast(`📍 ${machine.name} - ${statusText} (${machine.capacity}%)`, machine.status === 'active' ? 'success' : 'error');
+    }
+
+    window.quickRecycle = quickRecycle;
+    window.redeemReward = redeemReward;
+    window.logout = logout;
+    window.showMachineInfo = showMachineInfo;
+
+    document.addEventListener('DOMContentLoaded', initApp);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9aa4dfed91380977',t:'MTc2NTExOTQzOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

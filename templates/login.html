@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="vi">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GreenMate - Đăng Nhập</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .gradient-bg {
+      background: linear-gradient(180deg, #10B981 0%, #34D399 50%, #6EE7B7 100%);
+    }
+    
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+      }
+      33% {
+        transform: translateY(-20px) rotate(5deg);
+      }
+      66% {
+        transform: translateY(10px) rotate(-5deg);
+      }
+    }
+    
+    @keyframes floatReverse {
+      0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+      }
+      33% {
+        transform: translateY(15px) rotate(-3deg);
+      }
+      66% {
+        transform: translateY(-15px) rotate(3deg);
+      }
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    .float-1 {
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    .float-2 {
+      animation: floatReverse 8s ease-in-out infinite;
+      animation-delay: 1s;
+    }
+    
+    .float-3 {
+      animation: float 7s ease-in-out infinite;
+      animation-delay: 2s;
+    }
+    
+    .float-4 {
+      animation: floatReverse 9s ease-in-out infinite;
+      animation-delay: 0.5s;
+    }
+    
+    .float-5 {
+      animation: float 10s ease-in-out infinite;
+      animation-delay: 1.5s;
+    }
+    
+    .slide-in {
+      animation: slideIn 0.8s ease-out;
+    }
+    
+    .fade-in {
+      animation: fadeIn 1s ease-out;
+    }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 20px 60px rgba(16, 185, 129, 0.3);
+    }
+    
+    .input-field {
+      transition: all 0.3s ease;
+      border: 2px solid #E5E7EB;
+    }
+    
+    .input-field:focus {
+      outline: none;
+      border-color: #10B981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+    }
+    
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+    
+    .tab-button {
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    
+    .tab-button.active {
+      color: #10B981;
+    }
+    
+    .tab-button.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #10B981, #34D399);
+      border-radius: 2px;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    
+    .loading-spinner {
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 0.8s linear infinite;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="gradient-bg h-full w-full">
+  <main class="w-full h-full flex items-center justify-center p-6">
+   <div class="w-full h-full max-w-6xl max-h-full flex flex-col md:flex-row gap-8 items-center"><!-- Bên trái - Animation -->
+    <div class="w-full md:w-1/2 h-1/2 md:h-full flex items-center justify-center relative fade-in">
+     <div class="relative w-full h-full max-w-md max-h-96 md:max-h-full"><!-- Logo và tiêu đề -->
+      <div class="absolute top-0 left-1/2 transform -translate-x-1/2 text-center z-10">
+       <h1 class="text-5xl md:text-6xl font-bold text-white mb-4" style="text-shadow: 0 4px 20px rgba(0,0,0,0.2)">🌱 GreenMate</h1>
+       <p class="text-xl text-emerald-50 font-medium">Tái chế thông minh, bảo vệ hành tinh</p>
+      </div><!-- Hình ảnh animation -->
+      <div class="absolute top-1/4 left-1/4 float-1">
+       <svg width="80" height="80" viewbox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="35" fill="rgba(255, 255, 255, 0.9)" stroke="#10B981" stroke-width="3" /> <text x="40" y="55" font-size="40" text-anchor="middle">
+         🍶
+        </text>
+       </svg>
+      </div>
+      <div class="absolute top-1/2 right-1/4 float-2">
+       <svg width="70" height="70" viewbox="0 0 70 70" fill="none"><circle cx="35" cy="35" r="30" fill="rgba(255, 255, 255, 0.9)" stroke="#34D399" stroke-width="3" /> <text x="35" y="48" font-size="35" text-anchor="middle">
+         ♻️
+        </text>
+       </svg>
+      </div>
+      <div class="absolute bottom-1/4 left-1/3 float-3">
+       <svg width="90" height="90" viewbox="0 0 90 90" fill="none"><circle cx="45" cy="45" r="40" fill="rgba(255, 255, 255, 0.9)" stroke="#10B981" stroke-width="3" /> <text x="45" y="60" font-size="45" text-anchor="middle">
+         🌍
+        </text>
+       </svg>
+      </div>
+      <div class="absolute top-2/3 right-1/3 float-4">
+       <svg width="65" height="65" viewbox="0 0 65 65" fill="none"><circle cx="32.5" cy="32.5" r="28" fill="rgba(255, 255, 255, 0.9)" stroke="#6EE7B7" stroke-width="3" /> <text x="32.5" y="45" font-size="32" text-anchor="middle">
+         🥫
+        </text>
+       </svg>
+      </div>
+      <div class="absolute bottom-1/3 right-1/4 float-5">
+       <svg width="75" height="75" viewbox="0 0 75 75" fill="none"><circle cx="37.5" cy="37.5" r="32" fill="rgba(255, 255, 255, 0.9)" stroke="#34D399" stroke-width="3" /> <text x="37.5" y="50" font-size="37" text-anchor="middle">
+         🌳
+        </text>
+       </svg>
+      </div>
+     </div>
+    </div><!-- Bên phải - Form -->
+    <div class="w-full md:w-1/2 flex items-center justify-center slide-in">
+     <div class="glass-card rounded-3xl p-8 w-full max-w-md"><!-- Tabs -->
+      <div class="flex gap-8 mb-8 border-b-2 border-gray-200"><button id="loginTab" class="tab-button active text-xl font-bold pb-3 flex-1" onclick="switchTab('login')"> Đăng Nhập </button> <button id="registerTab" class="tab-button text-xl font-bold pb-3 flex-1 text-gray-500" onclick="switchTab('register')"> Đăng Ký </button>
+      </div><!-- Form Đăng Nhập -->
+      <form id="loginForm" class="space-y-5" onsubmit="handleLogin(event)">
+       <div><label for="loginEmail" class="block text-sm font-semibold text-gray-700 mb-2">Email hoặc Tên đăng nhập</label> <input type="text" id="loginEmail" class="input-field w-full px-4 py-3 rounded-xl" placeholder="Nhập email hoặc tên đăng nhập" required>
+       </div>
+       <div><label for="loginPassword" class="block text-sm font-semibold text-gray-700 mb-2">Mật khẩu</label> <input type="password" id="loginPassword" class="input-field w-full px-4 py-3 rounded-xl" placeholder="Nhập mật khẩu" required>
+       </div>
+       <div class="flex items-center justify-between"><label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="w-4 h-4 text-green-600 rounded"> <span class="text-sm text-gray-600">Ghi nhớ đăng nhập</span> </label> <button type="button" class="text-sm text-green-600 font-semibold hover:text-green-700"> Quên mật khẩu? </button>
+       </div><button type="submit" class="btn-primary w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg"> Đăng Nhập </button>
+       <div class="text-center mt-6">
+        <p class="text-sm text-gray-600">Hoặc đăng nhập với</p>
+        <div class="flex gap-4 mt-4"><button type="button" class="flex-1 py-3 rounded-xl border-2 border-gray-200 hover:border-green-500 transition font-semibold text-gray-700"> 🔵 Facebook </button> <button type="button" class="flex-1 py-3 rounded-xl border-2 border-gray-200 hover:border-green-500 transition font-semibold text-gray-700"> 🔴 Google </button>
+        </div>
+       </div>
+      </form><!-- Form Đăng Ký -->
+      <form id="registerForm" class="space-y-5 hidden" onsubmit="handleRegister(event)">
+       <div><label for="registerName" class="block text-sm font-semibold text-gray-700 mb-2">Họ và tên</label> <input type="text" id="registerName" class="input-field w-full px-4 py-3 rounded-xl" placeholder="Nhập họ và tên" required>
+       </div>
+       <div><label for="registerEmail" class="block text-sm font-semibold text-gray-700 mb-2">Email</label> <input type="email" id="registerEmail" class="input-field w-full px-4 py-3 rounded-xl" placeholder="Nhập địa chỉ email" required>
+       </div>
+       <div><label for="registerPassword" class="block text-sm font-semibold text-gray-700 mb-2">Mật khẩu</label> <input type="password" id="registerPassword" class="input-field w-full px-4 py-3 rounded-xl" placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)" minlength="6" required>
+       </div>
+       <div><label for="registerConfirmPassword" class="block text-sm font-semibold text-gray-700 mb-2">Xác nhận mật khẩu</label> <input type="password" id="registerConfirmPassword" class="input-field w-full px-4 py-3 rounded-xl" placeholder="Nhập lại mật khẩu" minlength="6" required>
+       </div>
+       <div class="flex items-start gap-2"><input type="checkbox" id="agreeTerms" class="w-4 h-4 mt-1 text-green-600 rounded" required> <label for="agreeTerms" class="text-sm text-gray-600"> Tôi đồng ý với <button type="button" class="text-green-600 font-semibold hover:text-green-700">Điều khoản sử dụng</button> và <button type="button" class="text-green-600 font-semibold hover:text-green-700">Chính sách bảo mật</button> </label>
+       </div><button type="submit" class="btn-primary w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg"> Tạo Tài Khoản </button>
+       <div class="text-center mt-6">
+        <p class="text-sm text-gray-600">Hoặc đăng ký với</p>
+        <div class="flex gap-4 mt-4"><button type="button" class="flex-1 py-3 rounded-xl border-2 border-gray-200 hover:border-green-500 transition font-semibold text-gray-700"> 🔵 Facebook </button> <button type="button" class="flex-1 py-3 rounded-xl border-2 border-gray-200 hover:border-green-500 transition font-semibold text-gray-700"> 🔴 Google </button>
+        </div>
+       </div>
+      </form>
+     </div>
+    </div>
+   </div>
+  </main><!-- Toast notification -->
+  <div id="toast" class="fixed top-6 right-6 bg-white rounded-xl shadow-2xl p-4 transform translate-x-full transition-transform duration-300 z-50">
+   <div class="flex items-center gap-3"><span id="toastIcon" class="text-2xl"></span> <span id="toastMessage" class="font-semibold text-gray-800"></span>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      app_title: "GreenMate",
+      login_title: "Đăng Nhập",
+      register_title: "Đăng Ký",
+      welcome_message: "Chào mừng bạn đến với GreenMate!",
+      background_color: "#34D399",
+      surface_color: "#FFFFFF",
+      text_color: "#1F2937",
+      primary_action_color: "#10B981",
+      secondary_action_color: "#34D399",
+      font_family: "system-ui",
+      font_size: 16
+    };
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange: async (config) => {
+          const customFont = config.font_family || defaultConfig.font_family;
+          const baseSize = config.font_size || defaultConfig.font_size;
+          const baseFontStack = 'system-ui, -apple-system, sans-serif';
+          
+          document.body.style.fontFamily = `${customFont}, ${baseFontStack}`;
+          document.body.style.fontSize = `${baseSize}px`;
+          
+          const titles = document.querySelectorAll('h1');
+          titles.forEach(el => el.style.fontSize = `${baseSize * 2}px`);
+          
+          const labels = document.querySelectorAll('label');
+          labels.forEach(el => el.style.fontSize = `${baseSize * 0.875}px`);
+          
+          const bgColor = config.background_color || defaultConfig.background_color;
+          const primaryColor = config.primary_action_color || defaultConfig.primary_action_color;
+          
+          document.body.style.background = `linear-gradient(180deg, ${primaryColor} 0%, ${bgColor} 50%, #6EE7B7 100%)`;
+          
+          const primaryBtns = document.querySelectorAll('.btn-primary');
+          primaryBtns.forEach(btn => {
+            btn.style.background = `linear-gradient(135deg, ${primaryColor} 0%, ${bgColor} 100%)`;
+          });
+        },
+        mapToCapabilities: (config) => ({
+          recolorables: [
+            {
+              get: () => config.background_color || defaultConfig.background_color,
+              set: (value) => {
+                config.background_color = value;
+                window.elementSdk.setConfig({ background_color: value });
+              }
+            },
+            {
+              get: () => config.surface_color || defaultConfig.surface_color,
+              set: (value) => {
+                config.surface_color = value;
+                window.elementSdk.setConfig({ surface_color: value });
+              }
+            },
+            {
+              get: () => config.text_color || defaultConfig.text_color,
+              set: (value) => {
+                config.text_color = value;
+                window.elementSdk.setConfig({ text_color: value });
+              }
+            },
+            {
+              get: () => config.primary_action_color || defaultConfig.primary_action_color,
+              set: (value) => {
+                config.primary_action_color = value;
+                window.elementSdk.setConfig({ primary_action_color: value });
+              }
+            },
+            {
+              get: () => config.secondary_action_color || defaultConfig.secondary_action_color,
+              set: (value) => {
+                config.secondary_action_color = value;
+                window.elementSdk.setConfig({ secondary_action_color: value });
+              }
+            }
+          ],
+          borderables: [],
+          fontEditable: {
+            get: () => config.font_family || defaultConfig.font_family,
+            set: (value) => {
+              config.font_family = value;
+              window.elementSdk.setConfig({ font_family: value });
+            }
+          },
+          fontSizeable: {
+            get: () => config.font_size || defaultConfig.font_size,
+            set: (value) => {
+              config.font_size = value;
+              window.elementSdk.setConfig({ font_size: value });
+            }
+          }
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ["app_title", config.app_title || defaultConfig.app_title],
+          ["welcome_message", config.welcome_message || defaultConfig.welcome_message]
+        ])
+      });
+    }
+
+    function switchTab(tab) {
+      const loginTab = document.getElementById('loginTab');
+      const registerTab = document.getElementById('registerTab');
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      
+      if (tab === 'login') {
+        loginTab.classList.add('active');
+        loginTab.classList.remove('text-gray-500');
+        registerTab.classList.remove('active');
+        registerTab.classList.add('text-gray-500');
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+      } else {
+        registerTab.classList.add('active');
+        registerTab.classList.remove('text-gray-500');
+        loginTab.classList.remove('active');
+        loginTab.classList.add('text-gray-500');
+        registerForm.classList.remove('hidden');
+        loginForm.classList.add('hidden');
+      }
+    }
+
+    function showToast(message, icon) {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+      
+      toastMessage.textContent = message;
+      toastIcon.textContent = icon;
+      
+      toast.style.transform = 'translateX(0)';
+      
+      setTimeout(() => {
+        toast.style.transform = 'translateX(150%)';
+      }, 3000);
+    }
+
+    function handleLogin(event) {
+      event.preventDefault();
+      
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const submitBtn = event.target.querySelector('button[type="submit"]');
+      
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+      
+      // Gọi API đăng nhập
+      fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Đăng Nhập';
+        
+        if (data.success) {
+          showToast(`Chào mừng ${data.user.name}! 🌱`, '✅');
+          setTimeout(() => {
+            window.location.href = data.redirect || '/home';
+          }, 1500);
+        } else {
+          showToast(data.message, '❌');
+        }
+      })
+      .catch(err => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Đăng Nhập';
+        showToast('Lỗi kết nối server', '❌');
+        console.error('Login error:', err);
+      });
+    }
+
+    function handleRegister(event) {
+      event.preventDefault();
+      
+      const name = document.getElementById('registerName').value;
+      const email = document.getElementById('registerEmail').value;
+      const password = document.getElementById('registerPassword').value;
+      const confirmPassword = document.getElementById('registerConfirmPassword').value;
+      const submitBtn = event.target.querySelector('button[type="submit"]');
+      
+      if (password !== confirmPassword) {
+        showToast('Mật khẩu xác nhận không khớp!', '❌');
+        return;
+      }
+      
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+      
+      // Gọi API đăng ký
+      fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Tạo Tài Khoản';
+        
+        if (data.success) {
+          showToast(`Chào mừng ${name} tham gia GreenMate! 🎉`, '✅');
+          setTimeout(() => {
+            switchTab('login');
+            document.getElementById('loginEmail').value = email;
+            document.getElementById('loginPassword').value = '';
+          }, 1500);
+        } else {
+          showToast(data.message, '❌');
+        }
+      })
+      .catch(err => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Tạo Tài Khoản';
+        showToast('Lỗi kết nối server', '❌');
+        console.error('Signup error:', err);
+      });
+    }
+
+    window.switchTab = switchTab;
+    window.handleLogin = handleLogin;
+    window.handleRegister = handleRegister;
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9aa4e559e10a0977',t:'MTc2NTExOTY2MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
