@@ -144,6 +144,7 @@ export default function App() {
   const [showAllBadges, setShowAllBadges] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -878,11 +879,42 @@ export default function App() {
               {/* Login Button */}
               <TouchableOpacity
                 style={styles.authMainBtn}
-                onPress={() => {
-                  if (loginEmail && loginPassword) {
-                    setIsAuthenticated(true);
-                  } else {
+                disabled={isAuthLoading}
+                onPress={async () => {
+                  if (!loginEmail || !loginPassword) {
                     Alert.alert('Lỗi', 'Vui lòng nhập email và mật khẩu');
+                    return;
+                  }
+
+                  setIsAuthLoading(true);
+                  try {
+                    const response = await fetch('http://192.168.1.12:5000/api/auth/login', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        email: loginEmail,
+                        password: loginPassword,
+                      }),
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                      setEditName(data.user.name);
+                      setIsAuthenticated(true);
+                      setLoginEmail('');
+                      setLoginPassword('');
+                      Alert.alert('Thành công', `Chào mừng ${data.user.name}!`);
+                    } else {
+                      Alert.alert('Lỗi đăng nhập', data.message || 'Đăng nhập thất bại');
+                    }
+                  } catch (error) {
+                    Alert.alert('Lỗi kết nối', 'Không thể kết nối đến server. Kiểm tra IP server: 192.168.1.12:5000');
+                    console.error('Login error:', error);
+                  } finally {
+                    setIsAuthLoading(false);
                   }
                 }}
               >
@@ -892,7 +924,7 @@ export default function App() {
                   end={{ x: 1, y: 1 }}
                   style={styles.authMainBtnGradient}
                 >
-                  <Text style={styles.authMainBtnText}>Đăng Nhập</Text>
+                  <Text style={styles.authMainBtnText}>{isAuthLoading ? '⏳ Đang xử lý...' : 'Đăng Nhập'}</Text>
                 </LinearGradient>
               </TouchableOpacity>
 
@@ -1036,15 +1068,55 @@ export default function App() {
               {/* Signup Button */}
               <TouchableOpacity
                 style={styles.authMainBtn}
-                onPress={() => {
-                  if (signupName && signupEmail && signupPassword && signupConfirmPassword) {
-                    if (signupPassword === signupConfirmPassword) {
-                      setIsAuthenticated(true);
-                    } else {
-                      Alert.alert('Lỗi', 'Mật khẩu không khớp');
-                    }
-                  } else {
+                disabled={isAuthLoading}
+                onPress={async () => {
+                  if (!signupName || !signupEmail || !signupPassword || !signupConfirmPassword) {
                     Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
+                    return;
+                  }
+
+                  if (signupPassword !== signupConfirmPassword) {
+                    Alert.alert('Lỗi', 'Mật khẩu không khớp');
+                    return;
+                  }
+
+                  if (signupPassword.length < 6) {
+                    Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
+                    return;
+                  }
+
+                  setIsAuthLoading(true);
+                  try {
+                    const response = await fetch('http://192.168.1.12:5000/api/auth/signup', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        name: signupName,
+                        email: signupEmail,
+                        password: signupPassword,
+                      }),
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                      setEditName(signupName);
+                      setIsAuthenticated(true);
+                      setSignupName('');
+                      setSignupEmail('');
+                      setSignupPassword('');
+                      setSignupConfirmPassword('');
+                      Alert.alert('Đăng ký thành công', `Chào mừng ${signupName}!`);
+                    } else {
+                      Alert.alert('Lỗi đăng ký', data.message || 'Đăng ký thất bại');
+                    }
+                  } catch (error) {
+                    Alert.alert('Lỗi kết nối', 'Không thể kết nối đến server. Kiểm tra IP server: 192.168.1.12:5000');
+                    console.error('Signup error:', error);
+                  } finally {
+                    setIsAuthLoading(false);
                   }
                 }}
               >
@@ -1054,7 +1126,7 @@ export default function App() {
                   end={{ x: 1, y: 1 }}
                   style={styles.authMainBtnGradient}
                 >
-                  <Text style={styles.authMainBtnText}>Đăng Ký</Text>
+                  <Text style={styles.authMainBtnText}>{isAuthLoading ? '⏳ Đang xử lý...' : 'Đăng Ký'}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -1270,7 +1342,13 @@ export default function App() {
                         setAuthMode('login');
                         setLoginEmail('');
                         setLoginPassword('');
+                        setSignupName('');
+                        setSignupEmail('');
+                        setSignupPassword('');
+                        setSignupConfirmPassword('');
+                        setEditName('Hàn Quốc Bảo');
                         setShowProfileModal(false);
+                        Alert.alert('Đã đăng xuất', 'Tạm biệt!');
                       },
                       style: 'destructive'
                     }

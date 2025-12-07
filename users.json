@@ -1,0 +1,26 @@
+{
+    "hanquocbao1712@gmail.com": {
+        "id": 1,
+        "email": "hanquocbao1712@gmail.com",
+        "password": "123456",
+        "name": "H\u00e0n Qu\u1ed1c B\u1ea3o",
+        "points": 1280,
+        "level": "Eco Warrior - Level 10"
+    },
+    "hanquocbao17123@gmail.com": {
+        "id": 2,
+        "email": "hanquocbao17123@gmail.com",
+        "password": "123456",
+        "name": "\u00e0n qu\u1ed1c b\u1ea3o",
+        "points": 500,
+        "level": "T\u00e2n binh - Level 1"
+    },
+    "hanquocbao1712123123@gmail.com": {
+        "id": 3,
+        "email": "hanquocbao1712123123@gmail.com",
+        "password": "123123",
+        "name": "GreenMate User",
+        "points": 1280,
+        "level": "Eco Warrior - Level 10"
+    }
+}
