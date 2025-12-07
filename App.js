@@ -18,6 +18,7 @@ import {
   TextInput
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { 
   Scan, 
   Home, 
@@ -238,28 +239,92 @@ export default function App() {
   });
 
   // --- LOGIC ---
-  const handleScan = () => {
-    setIsScanning(true);
-    setScanResult(null);
-    
-    // Simulate Processing
-    setTimeout(() => {
-      const newBottles = Math.floor(Math.random() * 5) + 1;
-      const newCans = Math.floor(Math.random() * 3) + 1;
-      const earnedPoints = (newBottles * 5) + (newCans * 3);
-      const savedCo2 = (newBottles * 0.08) + (newCans * 0.15);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [qrScanned, setQrScanned] = useState(false);
 
-      setScanResult({ bottles: newBottles, cans: newCans, points: earnedPoints, co2: savedCo2 });
+  const handleScan = async () => {
+    if (!permission) {
+      requestPermission();
+      return;
+    }
+    
+    if (permission && !permission.granted && permission.canAskAgain) {
+      requestPermission();
+      return;
+    }
+
+    if (permission && permission.granted) {
+      setIsScanning(true);
+      setScanResult(null);
+      setQrScanned(false);
+    } else {
+      Alert.alert('Quyền truy cập', 'Ứng dụng cần quyền truy cập camera để quét QR code');
+    }
+  };
+
+  const handleQRScanned = (data) => {
+    if (qrScanned) return; // Prevent multiple scans
+    setQrScanned(true);
+
+    try {
+      // Parse QR code data - expects format like "{"points":50}" or just a number
+      let earnedPoints = 0;
       
-      // Update data
-      setTimeout(() => {
-        setPoints(p => p + earnedPoints);
-        setBottles(b => b + newBottles);
-        setCans(c => c + newCans);
-        setCo2(c => parseFloat((c + savedCo2).toFixed(2)));
+      // Try to parse as JSON
+      try {
+        const parsed = JSON.parse(data);
+        earnedPoints = parseInt(parsed.points) || parseInt(data) || 0;
+      } catch {
+        // If not JSON, try to parse as number
+        earnedPoints = parseInt(data) || 0;
+      }
+
+      if (earnedPoints <= 0) {
+        Alert.alert('QR code không hợp lệ', 'QR code phải chứa số điểm > 0');
         setIsScanning(false);
-      }, 2000);
-    }, 2000);
+        setQrScanned(false);
+        return;
+      }
+
+      // Simulate processing time
+      setTimeout(() => {
+        // Calculate estimated items (for display purposes)
+        const avgBottlePoints = 5;
+        const estimatedBottles = Math.floor(earnedPoints / avgBottlePoints);
+
+        setScanResult({ 
+          bottles: estimatedBottles, 
+          cans: 0, 
+          points: earnedPoints, 
+          co2: (estimatedBottles * 0.08).toFixed(2),
+          qrData: data 
+        });
+
+        // Update points and stats after 2 seconds
+        setTimeout(() => {
+          setPoints(p => p + earnedPoints);
+          setBottles(b => b + estimatedBottles);
+          setCo2(c => parseFloat((c + parseFloat(estimatedBottles * 0.08)).toFixed(2)));
+          setIsScanning(false);
+          
+          // Add to wallet history
+          const historyEntry = {
+            id: Date.now(),
+            type: 'Quét QR',
+            item: `Máy rác #${data.slice(0, 8)}`,
+            points: earnedPoints,
+            date: new Date().toLocaleString(),
+            status: 'Hoàn tất'
+          };
+          setWalletHistory(prev => [historyEntry, ...prev].slice(0, 20));
+        }, 2000);
+      }, 1500);
+    } catch (error) {
+      console.error('Error parsing QR:', error);
+      Alert.alert('Lỗi', 'Không thể xử lý QR code này');
+      setIsScanning(false);
+      setQrScanned(false);
+    }
   };
 
   // Replace static NEARBY_MACHINES usage with state so markers can be added at runtime
@@ -408,60 +473,106 @@ export default function App() {
 
   const renderScan = () => (
     <View style={styles.centerContent}>
-      <GlassCard style={styles.scanContainer}>
-        <Text style={styles.sectionTitleLarge}>Quét Mã QR</Text>
-        <Text style={styles.scanSubtitle}>Kết nối với máy GreenMate Box gần nhất</Text>
-        
-        <View style={styles.qrFrame}>
-          {isScanning ? (
-            <View style={{ alignItems: 'center' }}>
-              <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                <Recycle size={60} color={COLORS.primary} />
-              </Animated.View>
-              <Text style={styles.scanningText}>Đang xử lý rác...</Text>
-            </View>
-          ) : scanResult ? (
-            <View style={{ alignItems: 'center' }}>
-              <Text style={styles.rewardPoints}>+{scanResult.points}</Text>
-              <Text style={styles.rewardLabel}>ĐIỂM THƯỞNG</Text>
-              <View style={styles.rewardDetails}>
-                 <Text style={styles.rewardDetailText}>🍾 {scanResult.bottles}</Text>
-                 <View style={styles.dividerV} />
-                 <Text style={styles.rewardDetailText}>🥫 {scanResult.cans}</Text>
-              </View>
-            </View>
-          ) : (
-            <>
-              <Scan size={100} color="rgba(6, 78, 59, 0.2)" />
-              <Animated.View 
-                style={[
-                  styles.scanLine, 
-                  { transform: [{ translateY: scanTranslateY }] }
-                ]} 
-              />
-            </>
-          )}
-        </View>
+      {isScanning && permission?.granted ? (
+        // Camera view for QR scanning
+        <View style={{ flex: 1, width: '100%' }}>
+          <CameraView
+            style={StyleSheet.absoluteFillObject}
+            facing="back"
+            onBarcodeScanned={({ data }) => handleQRScanned(data)}
+            barcodeScannerSettings={{
+              barcodeTypes: ['qr'],
+            }}
+          />
+          
+          {/* Overlay UI */}
+          <View style={styles.cameraOverlay}>
+            {/* Close button */}
+            <TouchableOpacity 
+              style={styles.cameraCloseBtn}
+              onPress={() => {
+                setIsScanning(false);
+                setQrScanned(false);
+              }}
+            >
+              <X size={28} color="white" />
+            </TouchableOpacity>
 
-        {!isScanning && (
-          <TouchableOpacity 
-            style={styles.mainBtn} 
-            onPress={handleScan}
-          >
-            {scanResult ? (
-              <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                <Recycle size={20} color="white" style={{marginRight: 8}}/>
-                <Text style={styles.mainBtnText}>Quét tiếp</Text>
-              </View>
-            ) : (
-               <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                <Scan size={20} color="white" style={{marginRight: 8}}/>
-                <Text style={styles.mainBtnText}>Bắt đầu ngay</Text>
+            {/* Frame guide */}
+            <View style={styles.cameraFrameGuide} />
+
+            {/* Instructions */}
+            <View style={styles.cameraInstructions}>
+              <Text style={styles.cameraInstructionsText}>
+                Hướng máy ảnh vào mã QR trên máy tái chế
+              </Text>
+            </View>
+
+            {/* Scan feedback */}
+            {scanResult && (
+              <View style={styles.scanFeedback}>
+                <Text style={styles.scanFeedbackText}>✓ Quét thành công!</Text>
               </View>
             )}
-          </TouchableOpacity>
-        )}
-      </GlassCard>
+          </View>
+        </View>
+      ) : (
+        // Result/info card
+        <GlassCard style={styles.scanContainer}>
+          <Text style={styles.sectionTitleLarge}>Quét Mã QR</Text>
+          <Text style={styles.scanSubtitle}>Kết nối với máy GreenMate Box gần nhất</Text>
+          
+          <View style={styles.qrFrame}>
+            {isScanning && !permission?.granted ? (
+              <View style={{ alignItems: 'center' }}>
+                <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                  <Recycle size={60} color={COLORS.primary} />
+                </Animated.View>
+                <Text style={styles.scanningText}>Đang xử lý...</Text>
+              </View>
+            ) : scanResult ? (
+              <View style={{ alignItems: 'center' }}>
+                <Text style={styles.rewardPoints}>+{scanResult.points}</Text>
+                <Text style={styles.rewardLabel}>ĐIỂM THƯỞNG</Text>
+                <View style={styles.rewardDetails}>
+                   <Text style={styles.rewardDetailText}>🍾 {scanResult.bottles}</Text>
+                   <View style={styles.dividerV} />
+                   <Text style={styles.rewardDetailText}>💨 {scanResult.co2}kg CO₂</Text>
+                </View>
+              </View>
+            ) : (
+              <>
+                <Scan size={100} color="rgba(6, 78, 59, 0.2)" />
+                <Animated.View 
+                  style={[
+                    styles.scanLine, 
+                    { transform: [{ translateY: scanTranslateY }] }
+                  ]} 
+                />
+              </>
+            )}
+          </View>
+
+          {!isScanning && (
+            <TouchableOpacity 
+              style={styles.mainBtn} 
+              onPress={handleScan}
+            >
+              {scanResult ? (
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <Recycle size={20} color="white" style={{marginRight: 8}}/>
+                  <Text style={styles.mainBtnText}>Quét tiếp</Text>
+                </View>
+              ) : (
+                 <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <Scan size={20} color="white" style={{marginRight: 8}}/>
+                  <Text style={styles.mainBtnText}>Bắt đầu quét</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
+        </GlassCard>
+      )}
     </View>
   );
 
@@ -2110,4 +2221,68 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800'
   },
+  // Camera QR Scanner Styles
+  cameraOverlay: {
+    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 30,
+    paddingBottom: 60
+  },
+  cameraCloseBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10
+  },
+  cameraFrameGuide: {
+    width: 280,
+    height: 280,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: COLORS.success,
+    backgroundColor: 'transparent',
+    shadowColor: COLORS.success,
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 5
+  },
+  cameraInstructions: {
+    position: 'absolute',
+    bottom: 100,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20
+  },
+  cameraInstructionsText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center'
+  },
+  scanFeedback: {
+    position: 'absolute',
+    top: 100,
+    backgroundColor: 'rgba(16, 185, 129, 0.9)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20
+  },
+  scanFeedbackText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '700'
+  }
 });
