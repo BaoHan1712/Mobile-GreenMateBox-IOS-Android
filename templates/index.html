@@ -463,12 +463,12 @@
         <div class="w-full p-6 leaf-pattern">
           <div class="flex items-center justify-between mb-6 fade-in-up">
             <div>
-              <h1 class="page-title text-3xl font-bold text-white mb-1 app-title" style="text-shadow: 0 2px 10px rgba(0,0,0,0.2)">${defaultConfig.app_title}</h1>
+              <h1 class="page-title text-3xl font-bold text-white mb-1 app-title" style="text-shadow: 0 2px 10px rgba(0,0,0,0.2)">GreenMate</h1>
               <p class="label-text text-emerald-50 app-tagline">${defaultConfig.tagline}</p>
             </div>
-            <button class="w-14 h-14 rounded-full bg-white shadow-xl flex items-center justify-center text-3xl float-animation" onclick="navigateTo('profile')">
-              ${appState.userData.avatar}
-            </button>
+            <button class="w-14 h-14 rounded-full bg-white shadow-xl flex items-center justify-center text-3xl float-animation overflow-hidden" onclick="navigateTo('profile')">
+            <img src="{{ url_for('static', filename='image/logo.png') }}" alt="User Avatar" class="w-full h-full object-cover">
+        </button>
           </div>
 
           <div class="eco-card rounded-3xl p-6 mb-6 fade-in-up shimmer" style="animation-delay: 0.1s">
