@@ -312,7 +312,7 @@ python server.py
 
 ## 👥 Đội Ngũ
 
-- **Developer**: Bảo Hàn
+- **Developer**: HanBao
 - **Project**: GreenMate Box
 
 ---
