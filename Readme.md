@@ -369,31 +369,6 @@ Với GreenMate Box, chúng tôi muốn:
 
 Made with 💚 by GreenMate Team
 
-Nếu muốn kết nối với server thực, thêm vào đầu App.js:
-
-```javascript
-const API_URL = 'http://localhost:5000/api';
-```
-
-Sau đó sửa hàm login/signup để gọi API:
-
-```javascript
-const handleLogin = async () => {
-  try {
-    const response = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: loginEmail, password: loginPassword })
-    });
-    const data = await response.json();
-    if (data.success) {
-      setIsAuthenticated(true);
-    }
-  } catch (error) {
-    Alert.alert('Lỗi', 'Không kết nối được server');
-  }
-};
-```
 
 ## 📁 Cấu Trúc Project
 
