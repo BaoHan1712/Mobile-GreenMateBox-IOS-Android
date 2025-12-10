@@ -37,8 +37,10 @@ import {
   Droplets,
   GhostIcon,
   GiftIcon,
-  AwardIcon
+  AwardIcon,
+  Newspaper
 } from 'lucide-react-native';
+import { NewsScreen } from './news';
 
 // --- CẤU HÌNH MÀU SẮC ---
 const COLORS = {
@@ -146,6 +148,7 @@ export default function App() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [showNews, setShowNews] = useState(false);
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -384,6 +387,24 @@ export default function App() {
   const renderDashboard = () => (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
       {renderHeader()}
+
+      {/* News Button */}
+      <TouchableOpacity 
+        style={styles.newsButton}
+        onPress={() => setShowNews(true)}
+      >
+        <LinearGradient
+          colors={['#3B82F6', '#1D4ED8']}
+          style={styles.newsButtonGradient}
+        >
+          <Newspaper size={24} color="white" />
+          <View style={styles.newsButtonContent}>
+            <Text style={styles.newsButtonTitle}>📰 Tin Tức Môi Trường</Text>
+            <Text style={styles.newsButtonSubtitle}>Cập nhật những tin mới nhất</Text>
+          </View>
+          <ChevronRight size={20} color="white" />
+        </LinearGradient>
+      </TouchableOpacity>
 
       {/* Main Card */}
       <View style={styles.mainCardShadow}>
@@ -999,7 +1020,7 @@ export default function App() {
 
                   setIsAuthLoading(true);
                   try {
-                    const response = await fetch('http://192.168.1.12:5000/api/auth/login', {
+                    const response = await fetch('http://192.168.1.2:5000/api/auth/login', {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
@@ -1022,7 +1043,7 @@ export default function App() {
                       Alert.alert('Lỗi đăng nhập', data.message || 'Đăng nhập thất bại');
                     }
                   } catch (error) {
-                    Alert.alert('Lỗi kết nối', 'Không thể kết nối đến server. Kiểm tra IP server: 192.168.1.12:5000');
+                    Alert.alert('Lỗi kết nối', 'Không thể kết nối đến server. Kiểm tra IP server: 192.168.1.2:5000');
                     console.error('Login error:', error);
                   } finally {
                     setIsAuthLoading(false);
@@ -1198,7 +1219,7 @@ export default function App() {
 
                   setIsAuthLoading(true);
                   try {
-                    const response = await fetch('http://192.168.1.12:5000/api/auth/signup', {
+                    const response = await fetch('http://192.168.1.2:5000/api/auth/signup', {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
@@ -1224,7 +1245,7 @@ export default function App() {
                       Alert.alert('Lỗi đăng ký', data.message || 'Đăng ký thất bại');
                     }
                   } catch (error) {
-                    Alert.alert('Lỗi kết nối', 'Không thể kết nối đến server. Kiểm tra IP server: 192.168.1.12:5000');
+                    Alert.alert('Lỗi kết nối', 'Không thể kết nối đến server. Kiểm tra IP server: 192.168.1.2:5000');
                     console.error('Signup error:', error);
                   } finally {
                     setIsAuthLoading(false);
@@ -1535,6 +1556,16 @@ export default function App() {
           {renderBadgesModal()}
           {renderWalletHistoryModal()}
           {renderProfileModal()}
+
+          {/* News Modal */}
+          <Modal
+            visible={showNews}
+            animationType="slide"
+            transparent={false}
+            statusBarTranslucent
+          >
+            <NewsScreen onClose={() => setShowNews(false)} />
+          </Modal>
         </>
       )}
     </View>
@@ -1554,6 +1585,37 @@ const styles = StyleSheet.create({
   avatarContainer: { position: 'relative' },
   avatar: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: 'white' },
   onlineDot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, backgroundColor: COLORS.success, borderWidth: 2, borderColor: 'white' },
+
+  // News Button
+  newsButton: {
+    marginBottom: 16,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  newsButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    gap: 12,
+  },
+  newsButtonContent: {
+    flex: 1,
+  },
+  newsButtonTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  newsButtonSubtitle: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 4,
+  },
 
   // Glass Card
   glassCard: {
